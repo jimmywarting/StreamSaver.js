@@ -66,4 +66,4 @@ python -m SimpleHTTPServer 3000 & python -m SimpleHTTPServer 3001
 [1]: https://github.com/eligrey
 [2]: https://github.com/eligrey/FileSaver.js
 [3]: https://github.com/jimmywarting/StreamSaver.js/blob/master/example.html
-[3]: https://developer.mozilla.org/en-US/docs/Web/API/FetchEvent/respondWith
+[4]: https://developer.mozilla.org/en-US/docs/Web/API/FetchEvent/respondWith
