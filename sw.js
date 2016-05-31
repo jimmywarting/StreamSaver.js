@@ -66,10 +66,10 @@ function hijacke(uniqLink, stream, filename){
 
     	let res = new Response(stream, {
     		headers: {
-                'Content-Disposition': 'attachment; filename=' + filename
+				'Content-Disposition': 'attachment; filename=' + filename
     		}
     	})
-
+		console.log(res)
     	event.respondWith(res)
     })
 }
