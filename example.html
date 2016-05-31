@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>example.com</title>
+	</head>
+	<body>
+		<iframe hidden src="http://localhost:3000" id="$iframe"></iframe>
+
+		<h1>Example of saving a stream directly to the filesystem</h1>
+		<form id="$form">
+			<h3>What would you like to save?</h3>
+			<label><input name="kind" value="text" type="radio" checked>Plain text (Save as you type)</label><br>
+			<label><input name="kind" value="video" type="radio">Video stream</label><br>
+			<label><input name="kind" value="audio" type="radio">Audio stream</label><br>
+			<label><input name="kind" value="fetch" type="radio">Fetch stream</label>
+			 - kind of cheesy, since you can use fetchEvent to add
+			 Content-Disposition header (but requires service worker + ssl)<br>
+			<label><input name="kind" value="screen" type="radio">Screen stream</label>
+			- requires chromes <a href="https://chrome.google.com/webstore/detail/screen-capturing/ajhifddimkapgcifgcodmmfdlknahffk">Screen Capturing</a> extension<br><br>
+			<label>What should the name of the file be?<br>
+				<input name="$filename" required value="sample.txt">
+			</label>
+			<input type="submit" value="Start">
+		</form>
+		<div id="$writer" hidden>
+			<button id="$a">Write some aaa's</button>
+			<button id="$b">Write some bbb's</button>
+			<button id="$c">Write some ccc's</button>
+		</div>
+		<button id="$close" hidden>close stream</button>
+		<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
+		<script>
+			$form.onsubmit = event => {
+				event.preventDefault()
+
+				let kind = $form.querySelector(':checked').value
+				let filename = $form.$filename.value
+				let channel = new MessageChannel
+				let permission
+
+				$form.remove()
+
+				switch (kind) {
+					case "text":
+						$writer.hidden = false
+					break; case "video":
+						permission = {name: 'userMedia', video: true}
+					break; case "audio":
+						permission = {name: 'userMedia', audio: true}
+					break; case "fetch":
+						let url = "http://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4"
+						fetch(url).then(res => {
+							// https://jakearchibald.com/2016/streams-ftw/
+						})
+					break; case "screen":
+						permission = {name: 'screen'}
+					break;
+				}
+
+				channel.port1.onmessage = e => {
+					let encoder = new TextEncoder
+
+					$close.onclick = () => channel.port1.postMessage('end')
+
+					$a.onclick = $b.onclick = $c.onclick = event => {
+						let data = event.target.id[1].repeat(1024)
+						let uint8array = encoder.encode(data + "\n\n")
+						$close.hidden = false
+						channel.port1.postMessage(uint8array)
+					}
+				}
+				console.log(!!permission)
+				permission && su.request(permission).then(stream => {
+					let mediaRecorder = new MediaRecorder(stream)
+					let chunks = Promise.resolve()
+					let fr = new FileReader
+
+					$close.hidden = false
+					mediaRecorder.start()
+					mediaRecorder.ondataavailable = evt => {
+						let blob = evt.data
+
+						chunks = chunks.then(() => new Promise(resolve => {
+							fr.onload = () => {
+								let uint8array = new Uint8Array(fr.result)
+								channel.port1.postMessage(uint8array)
+								resolve()
+							}
+							fr.readAsArrayBuffer(blob)
+						}))
+					}
+				})
+
+				$iframe.contentWindow.postMessage(filename, '*', [channel.port2])
+			}
+		</script>
+	</body>
+</html>
