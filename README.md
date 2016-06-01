@@ -21,9 +21,6 @@ This is what I'm aiming for and this is what StreamSaver.js eventually will beco
 ```javascript
 // High level api
 saveStream(stream, 'filename')
-
-// An alteretive syntax would be haven't decided yet
-stream.pipeTo( createWriteStream('filename') )
 ```
 
 But for now it's a lower level api where you need to create your own MessageChannel,
@@ -38,7 +35,6 @@ So go ahead and skim the [example.html][3] file instead
 
 
 How is this possible?
-====
 Good that you asked.
 There is not any magical save() function that saves a stream, file or blob...
 Apart from Microsoft that decided to implement there own non standard msSaveOrOpenBlob
@@ -51,10 +47,10 @@ header to tell the browser to save the file. But we don't have a server. So the
 only solution is to create a service worker that can intercept links and use
 [respondWith()][4]
 This will scream high restriction just by mentioning service worker. It's such a
-powerful tool that it need to run on https <s>but there is a workaround for http
-sites: iframes + 3th party https site. Who would have guess that iframe could be so helpful?
-But i won't go into details on that.</s> tried it on the demo site and didn't work, were not allowed
-to register service worker when parent was on http... popups?
+powerful tool that it need to run on https but there is a workaround for http
+sites: popups + 3th party https site. Who would have guess that?
+But i won't go into details on that. (The idea is to use a middle man to send a
+dataChannel to the serviceWorker from a site that runs https)
 
 So it all boils down to using
 serviceWorker, MessageChannel, postMessage, fetch, respondWith, iframes (for http -> https -> serviceWorker),

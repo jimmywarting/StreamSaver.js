@@ -1,0 +1,84 @@
+<!--
+	mitm.html is the lite "man in the middle"
+
+	This is only meant to signal the opener's messageChannel to
+	the service worker
+	The service worker is capitable of intercepting all request and fork theire
+	own "fake" response - wish we are going to craft
+	when the worker then recives a stream then the worker will tell this middle
+	man to open up a link that will start the download
+-->
+<script>
+let controller = navigator.serviceWorker.controller
+let host = "jimmywarting.github.io"
+
+// Service worker only works on https, 127.0.0.1 and localhost
+if (window.location.host == host && window.location.protocol != "https:")
+    window.location.protocol = "https:"
+
+function pair(message, port) {
+	// This sends the message data as well as transferring messageChannel.port2 to the service worker.
+    // The service worker can then use the transferred port to reply via postMessage(), which
+    // will in turn trigger the onmessage handler on messageChannel.port1.
+    // See https://html.spec.whatwg.org/multipage/workers.html#dom-worker-postmessage
+    controller.postMessage(message, [port])
+
+	// serviceWorker is telling us to open up a uniq link that will start
+	// saving the file to the disk with the help of Content-Disposition
+	navigator.serviceWorker.onmessage = event => {
+        let link = document.createElement('a')
+        let click = new MouseEvent('click')
+
+        link.href = event.data.href
+		link.dispatchEvent(click)
+
+		// Hmm, could potentialy be safe to close the mitm popup now
+		// since we have forwared the dataChannel to the serviceWorker
+		// and the download has begun
+		// or will the dataChannel break if we close this? i hope not
+		// (it's less important if it's a iframe)
+		// TODO: needs investigation
+		//
+		// Interesting it works to close the mitm and still keep on download
+		// so it gose directly from http > serviceWorker
+		// But there is a catch you can only close the tab not the window
+		// So it can't be a "popup" it has to be a tab to work
+	}
+}
+
+// message event is the first thing we need to setup a listner for
+// don't want the opener to do a random timeout - instead they can listen for
+// the ready event
+window.onmessage = event => {
+    if(!event.ports || !event.ports.length) {
+        // It's important to have a messageChannel, don't want to interfair
+        // with other simultainus downloads
+
+        throw new TypeError("Mehhh! You didn't send a messageChannel")
+    }
+
+    // Register the worker, then forward the dataChannel to the worker
+    // So they can talk directly, so we don't have to be "the middle man" any
+    // longer
+    navigator.serviceWorker.getRegistration('./').then(sw => sw
+		? pair(event.data, event.ports[0])
+		: navigator.serviceWorker.register('sw.js', {scope: './'})
+			.then(() => navigator.serviceWorker.ready)
+			.then(() => {
+				// the navigator.serviceWorker.controller is frozen and allways
+				// null, so instead of reloading the page we get the controller
+				// from a new temporary window, sucks i know...
+				iframe = document.createElement('iframe')
+				iframe.src = location.href
+				document.body.appendChild(iframe)
+				iframe.onload = () => {
+					controller = iframe.contentWindow.navigator.serviceWorker.controller
+					pair(event.data, event.ports[0])
+					iframe.remove()
+				}
+			})
+	)
+}
+
+opener && opener.postMessage('ready', '*')
+</script>

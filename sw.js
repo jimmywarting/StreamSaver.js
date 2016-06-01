@@ -6,23 +6,17 @@ self.onmessage = event => {
 
     let p = new Promise((resolve, reject) => {
         let stream = createStream(resolve, reject, event.ports[0])
-        hijacke(uniqLink, stream, event.data)
+        hijacke(uniqLink, stream, event.data, event.ports[0])
     })
 
 	// Tell the middle man to open the link to kick start the stream download
 	clients.matchAll({includeUncontrolled: true, type: 'window'}).then(clients => {
-		// Would hope that we don't have to broadcast to all sites
-		// just only the page that opened it would be enough?
-		//
-		// Had problem when only using the first in the list
-		for(let client of clients){
+		for(let client of clients) {
 			client.postMessage({
-				href: uniqLink
-			})
+		        href: uniqLink
+		    })
 		}
 	})
-
-	return
 
     // Beginning in Chrome 51, event is an ExtendableMessageEvent, which supports
     // the waitUntil() method for extending the lifetime of the event handler
@@ -44,6 +38,7 @@ function createStream(resolve, reject, port){
 			port.postMessage("ready")
 			// When we recive data on the messageChannel, we write
 			port.onmessage = event => {
+				console.log("write: ", event.data)
 				// We finaly have a abortable stream =D
 				if(event.data === 'end')
 					return controller.close()
@@ -59,10 +54,12 @@ function createStream(resolve, reject, port){
 
 
 
-function hijacke(uniqLink, stream, filename){
+function hijacke(uniqLink, stream, filename, port){
 	let listener
 
     self.addEventListener('fetch', listener = event => {
+    	console.log("handeling fetch event for", event.request.url)
+
         if(!event.request.url.includes(uniqLink))
     		return
 
@@ -70,10 +67,13 @@ function hijacke(uniqLink, stream, filename){
 
     	let res = new Response(stream, {
     		headers: {
-                'Content-Disposition': 'attachment; filename=' + filename
+				'Content-Disposition': 'attachment; filename=' + filename
     		}
     	})
 
     	event.respondWith(res)
+
+		// Just informing http sites that the tab can be closed
+		port.postMessage("ready to write")
     })
 }
