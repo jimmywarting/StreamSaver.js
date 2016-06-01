@@ -59,6 +59,7 @@ function hijacke(uniqLink, stream, filename){
 	let listener
 
     self.addEventListener('fetch', listener = event => {
+    	console.log("handeling fetch event for", event.request.url)
         if(!event.request.url.includes(uniqLink))
     		return
 
