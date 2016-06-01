@@ -35,6 +35,7 @@ So go ahead and skim the [example.html][3] file instead
 
 
 How is this possible?
+====
 Good that you asked.
 There is not any magical save() function that saves a stream, file or blob...
 Apart from Microsoft that decided to implement there own non standard msSaveOrOpenBlob
