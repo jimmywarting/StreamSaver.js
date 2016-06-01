@@ -6,7 +6,7 @@ self.onmessage = event => {
 
     let p = new Promise((resolve, reject) => {
         let stream = createStream(resolve, reject, event.ports[0])
-        hijacke(uniqLink, stream, event.data)
+        hijacke(uniqLink, stream, event.data, event.ports[0])
     })
 
 	// Tell the middle man to open the link to kick start the stream download
@@ -54,11 +54,12 @@ function createStream(resolve, reject, port){
 
 
 
-function hijacke(uniqLink, stream, filename){
+function hijacke(uniqLink, stream, filename, port){
 	let listener
 
     self.addEventListener('fetch', listener = event => {
     	console.log("handeling fetch event for", event.request.url)
+
         if(!event.request.url.includes(uniqLink))
     		return
 
@@ -69,7 +70,10 @@ function hijacke(uniqLink, stream, filename){
 				'Content-Disposition': 'attachment; filename=' + filename
     		}
     	})
-		console.log(res)
+
     	event.respondWith(res)
+
+		// Just informing http sites that the tab can be closed
+		port.postMessage("ready to write")
     })
 }

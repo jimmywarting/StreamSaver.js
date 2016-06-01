@@ -5,19 +5,18 @@
 		<title>example.com</title>
 	</head>
 	<body>
-		<iframe hidden src="https://jimmywarting.github.io/StreamSaver.js/" id="$iframe"></iframe>
-
 		<h1>Example of saving a stream directly to the filesystem</h1>
 		<form id="$form">
 			<h3>What would you like to save?</h3>
 			<label><input name="kind" value="text" type="radio" checked>Plain text (Save as you type)</label><br>
 			<label><input name="kind" value="video" type="radio">Video stream</label><br>
 			<label><input name="kind" value="audio" type="radio">Audio stream</label><br>
-			<label><input name="kind" value="fetch" type="radio">Fetch stream</label>
+			<!-- disabled until now, haven't had the time to write any demo using fetch -->
+			<label><input disabled name="kind" value="fetch" type="radio">Fetch stream</label>
 			 - kind of cheesy, since you can use fetchEvent to add
 			 Content-Disposition header (but requires service worker + ssl)<br>
 			<label><input name="kind" value="screen" type="radio">Screen stream</label>
-			- requires chromes <a href="https://chrome.google.com/webstore/detail/screen-capturing/ajhifddimkapgcifgcodmmfdlknahffk">Screen Capturing</a> extension<br><br>
+			- requires chromes <a href="https://goo.gl/5La0Iz">Screen Capturing</a> extension<br><br>
 			<label>What should the name of the file be?<br>
 				<input name="$filename" required value="sample.txt">
 			</label>
@@ -30,20 +29,48 @@
 		</div>
 		<button id="$close" hidden>close stream</button>
 		<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
+		<script src="StreamSaver.js"></script>
 		<script>
 			$form.onsubmit = event => {
 				event.preventDefault()
 
-				let kind = $form.querySelector(':checked').value
-				let filename = $form.$filename.value
-				let channel = new MessageChannel
-				let permission
+				let
+				kind = $form.querySelector(':checked').value,
+				filename = $form.$filename.value,
+				permission
 
 				$form.remove()
 
 				switch (kind) {
 					case "text":
 						$writer.hidden = false
+						/*
+						let stream = new ReadableStream({
+							start(controller) {
+								$a.onclick = $b.onclick = $c.onclick = event => {
+									let data = event.target.id[1].repeat(1024)
+									let uint8array = encoder.encode(data + "\n\n")
+									controller.enqueue(uint8array)
+								}
+							},
+							cancel() {
+								console.log("user aborted")
+							}
+						})
+
+						// TODO: This is what we should be doing...
+						saveStream(null, filename)
+						*/
+						let encoder = new TextEncoder
+						let unofficialApi = saveStream(null, filename)
+						$a.onclick = $b.onclick = $c.onclick = event => {
+							let data = event.target.id[1].repeat(1024)
+							let uint8array = encoder.encode(data + "\n\n")
+							unofficialApi._write(uint8array)
+							$close.hidden = false
+						}
+						// it should close automaticly when the stream ends...
+						$close.onclick = unofficialApi._close
 					break; case "video":
 						permission = {name: 'userMedia', video: true}
 					break; case "audio":
@@ -58,45 +85,15 @@
 					break;
 				}
 
-				channel.port1.onmessage = e => {
-					let encoder = new TextEncoder
 
-					$close.onclick = () => channel.port1.postMessage('end')
-
-					$a.onclick = $b.onclick = $c.onclick = event => {
-						let data = event.target.id[1].repeat(1024)
-						let uint8array = encoder.encode(data + "\n\n")
-						$close.hidden = false
-						channel.port1.postMessage(uint8array)
-					}
-				}
 
 				permission && su.request(permission).then(stream => {
-					let mediaRecorder = new MediaRecorder(stream)
-					let chunks = Promise.resolve()
-					let fr = new FileReader
-
+					// Haven't decided yet on the api
+					let unofficialApi = saveStream(stream, filename)
 					$close.hidden = false
-					mediaRecorder.start()
-					mediaRecorder.ondataavailable = evt => {
-						let blob = evt.data
-
-						chunks = chunks.then(() => new Promise(resolve => {
-							fr.onload = () => {
-								let uint8array = new Uint8Array(fr.result)
-								channel.port1.postMessage(uint8array)
-								resolve()
-							}
-							fr.readAsArrayBuffer(blob)
-						}))
-					}
+					// it should close automaticly when the stream ends...
+					$close.onclick = unofficialApi._close
 				})
-
-				var popup = window.open("https://jimmywarting.github.io/StreamSaver.js")
-				popup.onload = () => {
-					popup.postMessage(filename, '*', [channel.port2])
-				}
-				// $iframe.contentWindow.postMessage(filename, '*', [channel.port2])
 			}
 		</script>
 	</body>
