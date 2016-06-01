@@ -50,7 +50,8 @@ window.onmessage = event => {
     navigator.serviceWorker.getRegistration('./').then(sw => sw
 		? pair(event.data, event.ports[0])
 		: navigator.serviceWorker.register('sw.js', {scope: './'})
-			.then(worker => pair(event.data, event.ports[0]))
+			.then(() => navigator.serviceWorker.ready)
+			.then(() => pair(event.data, event.ports[0]))
 	, err => console.log(err))
 }
 </script>
