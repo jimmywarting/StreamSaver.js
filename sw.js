@@ -12,9 +12,11 @@ self.onmessage = event => {
 
 	// Tell the middle man to open the link to kick start the stream download
 	clients.matchAll({includeUncontrolled: true, type: 'window'}).then(clients => {
-		clients[0].postMessage({
-	        href: uniqLink
-	    })
+		for(let client of clients){
+			client.postMessage({
+		        href: uniqLink
+		    })
+		}
 	})
 
 	return
