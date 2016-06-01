@@ -14,7 +14,7 @@ window.saveStream = (stream, filename) => {
 	let
 	mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html',
 	chunks = Promise.resolve(),
-	usePopup = location.protocol != 'http:',
+	usePopup = location.protocol == 'http:',
 	tab,
 	fr = new FileReader,
 	channel = new MessageChannel,
