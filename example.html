@@ -70,7 +70,7 @@
 						channel.port1.postMessage(uint8array)
 					}
 				}
-				console.log(!!permission)
+
 				permission && su.request(permission).then(stream => {
 					let mediaRecorder = new MediaRecorder(stream)
 					let chunks = Promise.resolve()
@@ -92,7 +92,11 @@
 					}
 				})
 
-				$iframe.contentWindow.postMessage(filename, '*', [channel.port2])
+				var popup = window.open("https://jimmywarting.github.io/StreamSaver.js")
+				popup.onload = () => {
+					popup.postMessage(filename, '*', [channel.port2])
+				}
+				// $iframe.contentWindow.postMessage(filename, '*', [channel.port2])
 			}
 		</script>
 	</body>

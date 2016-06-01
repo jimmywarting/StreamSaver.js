@@ -6,20 +6,17 @@ self.onmessage = event => {
 
     let p = new Promise((resolve, reject) => {
         let stream = createStream(resolve, reject, event.ports[0])
-        console.log(stream)
         hijacke(uniqLink, stream, event.data)
     })
 
 	// Tell the middle man to open the link to kick start the stream download
 	clients.matchAll({includeUncontrolled: true, type: 'window'}).then(clients => {
-		for(let client of clients){
+		for(let client of clients) {
 			client.postMessage({
 		        href: uniqLink
 		    })
 		}
 	})
-
-	return
 
     // Beginning in Chrome 51, event is an ExtendableMessageEvent, which supports
     // the waitUntil() method for extending the lifetime of the event handler
