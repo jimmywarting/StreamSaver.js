@@ -21,6 +21,9 @@ This is what I'm aiming for and this is what StreamSaver.js eventually will beco
 ```javascript
 // High level api
 saveStream(stream, 'filename')
+
+// An alteretive syntax would be haven't decided yet
+stream.pipeTo( createWriteStream('filename') )
 ```
 
 But for now it's a lower level api where you need to create your own MessageChannel,
