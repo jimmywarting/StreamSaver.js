@@ -8,6 +8,8 @@
  * man to open up a link that will start the download
  */
 
+var controller = navigator.serviceWorker.controller
+
 // Service worker only works on https (and localhost)
 var host = "YOURDOMAIN.github.io"
 if (window.location.host == host && window.location.protocol != "https:")
@@ -18,7 +20,7 @@ function pair(message, port) {
     // The service worker can then use the transferred port to reply via postMessage(), which
     // will in turn trigger the onmessage handler on messageChannel.port1.
     // See https://html.spec.whatwg.org/multipage/workers.html#dom-worker-postmessage
-    navigator.serviceWorker.controller.postMessage(message, [port])
+    controller.postMessage(message, [port])
 
 	// serviceWorker is telling us to open up a uniq link that will start
 	// saving the file to the disk with the help of Content-Disposition
@@ -51,7 +53,15 @@ window.onmessage = event => {
 		? pair(event.data, event.ports[0])
 		: navigator.serviceWorker.register('sw.js', {scope: './'})
 			.then(() => navigator.serviceWorker.ready)
-			.then(() => pair(event.data, event.ports[0]))
+			.then(() => {
+				iframe = document.createElement('iframe')
+				iframe.src = location.href
+				document.body.appendChild(iframe)
+				iframe.onload = () => {
+					controller = iframe.contentWindow.navigator.serviceWorker.controller
+					pair(event.data, event.ports[0])
+				}
+			})
 	, err => console.log(err))
 }
 </script>
