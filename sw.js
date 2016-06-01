@@ -11,9 +11,15 @@ self.onmessage = event => {
 
 	// Tell the middle man to open the link to kick start the stream download
 	clients.matchAll({includeUncontrolled: true, type: 'window'}).then(clients => {
-		clients[0].postMessage({
-	        href: uniqLink
-	    })
+		// Would hope that we don't have to broadcast to all sites
+		// just only the page that opened it would be enough?
+		//
+		// Had problem when only using the first in the list
+		for(let client of clients){
+			client.postMessage({
+				href: uniqLink
+			})
+		}
 	})
 
 	return
