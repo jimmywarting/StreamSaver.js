@@ -14,7 +14,7 @@ window.saveStream = (stream, filename) => {
 	let
 	mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html',
 	chunks = Promise.resolve(),
-	usePopup = location.protocol != 'https:',
+	usePopup = location.protocol != 'https:' && location.hostname != 'localhost',
 	tab,
 	fr = new FileReader,
 	channel = new MessageChannel,
@@ -22,12 +22,12 @@ window.saveStream = (stream, filename) => {
 	pump,
 	popup
 
-	if(stream instanceof ReadableStream) {
-		var reader = stream.getReader();
+	if(stream instanceof ReadableStream || stream instanceof ReadableByteStream ) {
+		let
+		reader = stream.getReader()
 
 		pump = () => {
 			return reader.read().then(({ value, done }) => {
-				console.log(value, done)
 				if (done) {
 					channel.port1.postMessage('end')
 					return
@@ -42,7 +42,8 @@ window.saveStream = (stream, filename) => {
 
 		mediaRecorder.start()
 		mediaRecorder.ondataavailable = evt => {
-			let blob = evt.data
+			let
+			blob = evt.data
 
 			chunks = chunks.then(() => new Promise(resolve => {
 				fr.onload = () => {
@@ -82,8 +83,7 @@ window.saveStream = (stream, filename) => {
 		}
 
 		channel.port1.onmessage = evt => {
-
-			if(evt.data.debug && evt.data.debug === "Mocking a download request")
+			if(pump && evt.data.debug && evt.data.debug === "Mocking a download request")
 				pump()
 
 			// Don't need the mitm any longer
@@ -99,21 +99,18 @@ window.saveStream = (stream, filename) => {
 		// work cross origin
 		addEventListener('message', onready)
 	} else {
-		let iframe = document.createElement('iframe')
+		let
+		iframe = document.createElement('iframe')
 		iframe.src = mitm
 		iframe.hidden = true
 		iframe.onload = () => {
 			iframe.contentWindow.postMessage(filename, '*', [channel.port2])
+			channel.port1.onmessage = evt =>
+				pump &&
+				evt.data.debug &&
+				evt.data.debug === "Mocking a download request"
+				&& pump()
 		}
 		document.body.appendChild(iframe)
-	}
-
-	// A bit tiny unofficial api
-	// It should really be handled by streams close event emitter
-	return {
-		_usePopup: usePopup,
-		_write(msg){
-			channel.port1.postMessage(msg)
-		}
 	}
 }
