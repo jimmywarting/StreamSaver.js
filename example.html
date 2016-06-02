@@ -86,17 +86,17 @@
 						permission = {name: 'userMedia', video: true}
 					break; case "audio":
 						permission = {name: 'userMedia', audio: true}
+					break; case "screen":
+						permission = {name: 'screen'}
 					break; case "fetch":
-						let url = "http://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4"
+						// Here we could just simply open the link and then let
+						// the SW add Content-Disposition header to that request.
+						let url = "http://bit.ly/1r3uzWW"
 						fetch(url).then(res => {
 							// https://jakearchibald.com/2016/streams-ftw/
 						})
-					break; case "screen":
-						permission = {name: 'screen'}
 					break;
 				}
-
-
 
 				permission && su.request(permission).then(stream => {
 					// Haven't decided yet on the api
