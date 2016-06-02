@@ -19,7 +19,8 @@ window.saveStream = (stream, filename) => {
 	fr = new FileReader,
 	channel = new MessageChannel,
 	mediaRecorder,
-	pump
+	pump,
+	popup
 
 	if(stream instanceof ReadableStream) {
 		var reader = stream.getReader();
@@ -111,7 +112,6 @@ window.saveStream = (stream, filename) => {
 	// It should really be handled by streams close event emitter
 	return {
 		_usePopup: usePopup,
-		_popup: popup,
 		_write(msg){
 			channel.port1.postMessage(msg)
 		}
