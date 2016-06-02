@@ -15,13 +15,28 @@ window.saveStream = (stream, filename) => {
 	mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html',
 	chunks = Promise.resolve(),
 	usePopup = location.protocol != 'https:',
+	tab,
 	fr = new FileReader,
 	channel = new MessageChannel,
-	mediaRecorder
+	mediaRecorder,
+	pump
 
-	// TODO unfortenly MediaRecorder only accepts media streams
-	// can they be piped? don't know but this is the way to do it for now
-	if(stream){
+	if(stream instanceof ReadableStream) {
+		var reader = stream.getReader();
+
+		pump = () => {
+			return reader.read().then(({ value, done }) => {
+				console.log(value, done)
+				if (done) {
+					channel.port1.postMessage('end')
+					return
+				}
+				channel.port1.postMessage(value)
+				return pump();
+			})
+		}
+
+	} else if(stream) {
 		mediaRecorder = new MediaRecorder(stream)
 
 		mediaRecorder.start()
@@ -41,16 +56,8 @@ window.saveStream = (stream, filename) => {
 				fr.readAsArrayBuffer(blob)
 			}))
 		}
-	} else if(stream === "check if it's ReadableStream") {
-		// and threat it diffrently
-		// i hoped it wouldn't come to this special cases
-		// the idea was that the saver should take a stream and save it
-		// mediaStream and ReadableStream is both a stream but can't work the
-		// same way :(
-		//
-		// maybe someday we can just use pipeTo with both mediaStream and
-		// ReadableStream?
 	}
+
 	// Http sites can still take advantage of what serviceWorker
 	// can do but there is only one problem register a worker only
 	// works if top window is is using https so we need a popup :(
@@ -74,6 +81,10 @@ window.saveStream = (stream, filename) => {
 		}
 
 		channel.port1.onmessage = evt => {
+
+			if(evt.data.debug && evt.data.debug === "Mocking a download request")
+				pump()
+
 			// Don't need the mitm any longer
 			// dataChannel has been sent to the serviceWorker
 			// and the download has begun :)
@@ -100,9 +111,7 @@ window.saveStream = (stream, filename) => {
 	// It should really be handled by streams close event emitter
 	return {
 		_usePopup: usePopup,
-		_close(){
-			channel.port1.postMessage('end')
-		},
+		_popup: popup,
 		_write(msg){
 			channel.port1.postMessage(msg)
 		}
