@@ -15,7 +15,6 @@ window.saveStream = (stream, filename) => {
 	mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html',
 	chunks = Promise.resolve(),
 	usePopup = location.protocol != 'https:',
-	tab,
 	fr = new FileReader,
 	channel = new MessageChannel,
 	mediaRecorder
@@ -101,7 +100,6 @@ window.saveStream = (stream, filename) => {
 	// It should really be handled by streams close event emitter
 	return {
 		_usePopup: usePopup,
-		_popup: popup,
 		_close(){
 			channel.port1.postMessage('end')
 		},
