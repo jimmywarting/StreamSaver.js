@@ -33,17 +33,21 @@ self.onmessage = event => {
 function createStream(resolve, reject, port){
     // ReadableStream is only supported by chrome 52, but can be enabled
     // with a flag chrome://flags/#enable-experimental-web-platform-features
+    var bytesWritten = 0
     return new ReadableStream({
 		start(controller) {
-			port.postMessage("ready")
+			port.postMessage({debug: 'ReadableStream has been created'})
 			// When we recive data on the messageChannel, we write
 			port.onmessage = event => {
 				console.log("write: ", event.data)
 				// We finaly have a abortable stream =D
-				if(event.data === 'end')
-					return controller.close()
-
-				controller.enqueue(event.data)
+				if(event.data === 'end'){
+                    resolve()
+                    return controller.close()
+                }
+                controller.enqueue(event.data)
+                bytesWritten += event.data.byteLength
+                port.postMessage({ bytesWritten })
 			}
 		},
 		cancel() {
@@ -63,6 +67,8 @@ function hijacke(uniqLink, stream, filename, port){
         if(!event.request.url.includes(uniqLink))
     		return
 
+        port.postMessage({debug: 'Mocking a download request'})
+
         self.removeEventListener('fetch', listener)
 
     	let res = new Response(stream, {
@@ -72,8 +78,5 @@ function hijacke(uniqLink, stream, filename, port){
     	})
 
     	event.respondWith(res)
-
-		// Just informing http sites that the tab can be closed
-		port.postMessage("ready to write")
     })
 }

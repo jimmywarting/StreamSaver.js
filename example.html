@@ -63,6 +63,17 @@
 						*/
 						let encoder = new TextEncoder
 						let unofficialApi = saveStream(null, filename)
+
+						// You don't need the popup any more if you write atleast
+						// 1024 bytes has been transferred
+						if(unofficialApi._usePopup) {
+							setTimeout(()=>{
+								let data = "a".repeat(1024)
+								let uint8array = encoder.encode(data + "\n\n")
+								unofficialApi._write(uint8array)
+							}, 1000)
+						}
+
 						$a.onclick = $b.onclick = $c.onclick = event => {
 							let data = event.target.id[1].repeat(1024)
 							let uint8array = encoder.encode(data + "\n\n")

@@ -14,7 +14,7 @@ window.saveStream = (stream, filename) => {
 	let
 	mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html',
 	chunks = Promise.resolve(),
-	usePopup = location.protocol == 'http:',
+	usePopup = location.protocol != 'https:',
 	tab,
 	fr = new FileReader,
 	channel = new MessageChannel,
@@ -79,7 +79,7 @@ window.saveStream = (stream, filename) => {
 			// dataChannel has been sent to the serviceWorker
 			// and the download has begun :)
 			// Good for you damm http only websites :P
-			if(evt.data === 'ready to write')
+			if(evt.data.bytesWritten && evt.data.bytesWritten > 1024)
 				popup.close()
 		}
 
@@ -100,6 +100,8 @@ window.saveStream = (stream, filename) => {
 	// A bit tiny unofficial api
 	// It should really be handled by streams close event emitter
 	return {
+		_usePopup: usePopup,
+		_popup: popup,
 		_close(){
 			channel.port1.postMessage('end')
 		},
