@@ -18,7 +18,7 @@ on the client-side where the RAM is really low like on mobile devices
 Syntax:
 
 This is what I'm aiming for and this is what StreamSaver.js eventually will become.
-Help me define a public api #3
+Help me define a public api [#3](https://github.com/jimmywarting/StreamSaver.js/issues/3)
 ```javascript
 // High level api
 saveStream(stream, 'filename')
