@@ -98,7 +98,7 @@
 
 				permission && su.request(permission).then(stream => {
 					// Haven't decided yet on the api
-					// saveStream(stream, filename)
+					saveStream(stream, filename)
 					$close.hidden = false
 					$close.onclick = () => stopStream(stream)
 				})
