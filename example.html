@@ -12,7 +12,7 @@
 			<label><input name="kind" value="video" type="radio">Video stream</label><br>
 			<label><input name="kind" value="audio" type="radio">Audio stream</label><br>
 			<!-- disabled until now, haven't had the time to write any demo using fetch -->
-			<label><input disabled name="kind" value="fetch" type="radio">Fetch stream</label>
+			<label><input name="kind" value="fetch" type="radio">Fetch stream</label>
 			 - kind of cheesy, since you can use fetchEvent to add
 			 Content-Disposition header (but requires service worker + ssl)<br>
 			<label><input name="kind" value="screen" type="radio">Screen stream</label>
@@ -37,7 +37,8 @@
 				let
 				kind = $form.querySelector(':checked').value,
 				filename = $form.$filename.value,
-				permission
+				permission,
+				url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4"
 
 				$form.remove()
 
@@ -72,10 +73,21 @@
 						permission = {name: 'userMedia', audio: true}
 					break; case "screen":
 						permission = {name: 'screen'}
-					break; case "fetch":
+					break;
+					case "file":
+					case "blob":
+						// This is rather quite simple with fetch
+						// cuz you can retrive an actual stream with it
+						// Create a object url that you can request
+						// then just fall into next "fetch case"
+						url = URL.createObjectURL(blobOrFile)
+
+						// If you would like to see an other method
+						// that dosn't use ajax but uses FileReader instead
+						// look in the ./util.js
+					case "fetch":
 						// Here we could just simply open the link and then let
 						// the SW add Content-Disposition header to that request.
-						let url = "http://bit.ly/1r3uzWW"
 						fetch(url).then(res => {
 							// https://jakearchibald.com/2016/streams-ftw/
 							// The body is a stream :)
