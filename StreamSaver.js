@@ -18,13 +18,11 @@ window.saveStream = (stream, filename) => {
 	tab,
 	fr = new FileReader,
 	channel = new MessageChannel,
-	mediaRecorder,
 	pump,
 	popup
 
 	if(stream instanceof ReadableStream || stream instanceof ReadableByteStream ) {
-		let
-		reader = stream.getReader()
+		let reader = stream.getReader()
 
 		pump = () => {
 			return reader.read().then(({ value, done }) => {
@@ -38,8 +36,10 @@ window.saveStream = (stream, filename) => {
 		}
 
 	} else if(stream) {
-		mediaRecorder = new MediaRecorder(stream)
-
+		let mediaRecorder = new MediaRecorder(stream)
+		stream.addEventListener('ended', evt =>
+			channel.port1.postMessage('end')
+		)
 		mediaRecorder.start()
 		mediaRecorder.ondataavailable = evt => {
 			let
@@ -99,8 +99,8 @@ window.saveStream = (stream, filename) => {
 		// work cross origin
 		addEventListener('message', onready)
 	} else {
-		let
-		iframe = document.createElement('iframe')
+		let iframe = document.createElement('iframe')
+
 		iframe.src = mitm
 		iframe.hidden = true
 		iframe.onload = () => {

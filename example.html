@@ -98,11 +98,21 @@
 
 				permission && su.request(permission).then(stream => {
 					// Haven't decided yet on the api
-					let unofficialApi = saveStream(stream, filename)
+					// saveStream(stream, filename)
 					$close.hidden = false
-					// it should close automaticly when the stream ends...
-					$close.onclick = unofficialApi._close
+					$close.onclick = () => stopStream(stream)
 				})
+			}
+
+
+			function stopStream (stream) {
+				let tracks = [
+					...stream.getAudioTracks(),
+					...stream.getVideoTracks()
+				]
+
+				for(let track of tracks)
+					track.stop()
 			}
 		</script>
 	</body>
