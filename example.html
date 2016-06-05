@@ -29,6 +29,7 @@
 		</div>
 		<button id="$close" hidden>close stream</button>
 		<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
+		<script src="https://wzrd.in/standalone/web-streams-polyfill@latest"></script>
 		<script src="StreamSaver.js"></script>
 		<script>
 			$form.onsubmit = event => {
@@ -38,35 +39,28 @@
 				kind = $form.querySelector(':checked').value,
 				filename = $form.$filename.value,
 				permission,
-				url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4"
+				url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4",
+				myFile = fs.createWriteStream(filename)
 
 				$form.remove()
+				$close.hidden = false
+				$close.onclick = event => myFile.close()
 
 				switch (kind) {
 					case "text":
 						$writer.hidden = false
 						let encoder = new TextEncoder
-						let stream = new ReadableStream({
-							start(controller) {
-								let data = "a".repeat(1024)
-								let uint8array = encoder.encode(data + "\n\n")
-								controller.enqueue(uint8array)
 
-								$close.hidden = false
-								$close.onclick = () => controller.close()
+						let data = "a".repeat(1024)
+						let uint8array = encoder.encode(data + "\n\n")
+						myFile.write(uint8array) // Write some data to triger saving
 
-								$a.onclick = $b.onclick = $c.onclick = event => {
-									let data = event.target.id[1].repeat(1024)
-									let uint8array = encoder.encode(data + "\n\n")
-									controller.enqueue(uint8array)
-								}
-							},
-							cancel() {
-								console.log("user aborted")
-							}
-						})
 
-						saveStream(stream, filename)
+						$a.onclick = $b.onclick = $c.onclick = event => {
+							let data = event.target.id[1].repeat(1024)
+							let uint8array = encoder.encode(data + "\n\n")
+							myFile.write(uint8array)
+						}
 					break; case "video":
 						permission = {name: 'userMedia', video: true}
 					break; case "audio":
@@ -76,6 +70,16 @@
 					break;
 					case "file":
 					case "blob":
+
+						var blob = new Blob([
+							"a".repeat(1024),
+							"b".repeat(1024),
+							"c".repeat(1024)
+						])
+
+						let stream = fs.createBlobReader(blob)
+						stream.pipeTo(myFile)
+
 						// This is rather quite simple with fetch
 						// cuz you can retrive an actual stream with it
 						// Create a object url that you can request
@@ -91,16 +95,55 @@
 						fetch(url).then(res => {
 							// https://jakearchibald.com/2016/streams-ftw/
 							// The body is a stream :)
-							saveStream(res.body, filename)
+							console.log(res.body)
+							let reader = res.body.getReader()
+							let pump = () => {
+								return reader.read().then(({ value, done }) => {
+									if (done) {
+										myFile.close()
+										return
+									}
+									myFile.write(value)
+									return pump()
+								})
+							}
+							pump()
 						})
 					break;
 				}
 
 				permission && su.request(permission).then(stream => {
-					// Haven't decided yet on the api
-					saveStream(stream, filename)
-					$close.hidden = false
-					$close.onclick = () => stopStream(stream)
+					let fr = new FileReader
+					let mediaRecorder = new MediaRecorder(stream)
+					let chunks = Promise.resolve()
+
+					mediaRecorder.start()
+					$close.onclick = event => {
+						stopStream(stream)
+						mediaRecorder.stop()
+						setTimeout(()=>{
+							chunks.then(evt => {
+								myFile.close()
+							})
+						}, 1000)
+					}
+					mediaRecorder.ondataavailable = evt => {
+						let blob = evt.data
+
+						chunks = chunks.then(() => new Promise(resolve => {
+							fr.onload = () => {
+								// Should we let the serviceWorker be able to accept
+								// anything other then uint8array? ReadableStream don't seems
+								// so happy with anything else... but could load of some work
+								// of the main thread +1
+								// let uint8array = new Uint8Array(fr.result)
+								myFile.write(fr.result)
+								resolve()
+							}
+							fr.readAsArrayBuffer(blob)
+						}))
+					}
+
 				})
 			}
 

@@ -39,7 +39,6 @@ function createStream(resolve, reject, port){
 			port.postMessage({debug: 'ReadableStream has been created'})
 			// When we recive data on the messageChannel, we write
 			port.onmessage = event => {
-				console.log("write: ", event.data)
 				// We finaly have a abortable stream =D
 				if(event.data === 'end'){
                     resolve()
