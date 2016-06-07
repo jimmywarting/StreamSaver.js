@@ -39,8 +39,8 @@ try{
 </script>
 ```
 
-Syntax:
-=======
+Syntax
+======
 
 Writing some plain text
 ```javascript
