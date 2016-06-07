@@ -55,7 +55,6 @@
 						let uint8array = encoder.encode(data + "\n\n")
 						myFile.write(uint8array) // Write some data to triger saving
 
-
 						$a.onclick = $b.onclick = $c.onclick = event => {
 							let data = event.target.id[1].repeat(1024)
 							let uint8array = encoder.encode(data + "\n\n")
