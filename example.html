@@ -135,8 +135,8 @@
 								// anything other then uint8array? ReadableStream don't seems
 								// so happy with anything else... but could load of some work
 								// of the main thread +1
-								// let uint8array = new Uint8Array(fr.result)
-								myFile.write(fr.result)
+								let uint8array = new Uint8Array(fr.result)
+								myFile.write(uint8array)
 								resolve()
 							}
 							fr.readAsArrayBuffer(blob)
