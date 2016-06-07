@@ -16,7 +16,7 @@ on the client-side where the RAM is really low like on mobile devices
 
 Getting started
 ===============
-**It's important to test browser support before you include stream polyfills**
+**It's important to test browser support before you include stream polyfills**<br>
 cuz the serverWroker need to respondWith a native version of the ReadableStream
 ```html
 <script>
@@ -106,8 +106,8 @@ const blobStream = fs.createBlobReader(blob)
 blobStream.pipeTo(writeStream)
 ```
 
-Get a "stream" from ajax
-res.body is a readableByteStream, but don't have pipeTo yet
+Get a "stream" from ajax<br>
+res.body is a readableByteStream, but don't have pipeTo yet<br>
 So we have to use the reader instead which is the underlying method in streams
 ```javascript
 fetch(url).then(res => {
