@@ -6,7 +6,7 @@
 	'use strict'
 
 	const
-	SECURE = location.protocol != 'https:' || location.hostname == 'localhost',
+	SECURE = location.protocol == 'https:' || location.hostname == 'localhost',
 	MITM = `https://jimmywarting.github.io/StreamSaver.js/mitm.html`,
 	PROXY = MITM + (SECURE ? '' : '?popup=1')
 
