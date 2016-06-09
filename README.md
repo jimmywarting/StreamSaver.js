@@ -173,9 +173,9 @@ Consensus
 =========
 Go ahead and vote for how important this feature is
 
-[Fetch][16] MS Edge status: Preview
-[serviceWorker][17] MS Edge status: In Development
-[streams][18] Firefox Status: ASSIGNED
+- [Fetch][16] MS Edge status: Preview
+- [serviceWorker][17] MS Edge status: In Development
+- [streams][18] Firefox Status: ASSIGNED
 
 [1]: https://github.com/eligrey
 [2]: https://github.com/eligrey/FileSaver.js
