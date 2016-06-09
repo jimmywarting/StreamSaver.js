@@ -14,9 +14,7 @@
 		supported = false,
 		version: {
 			full: '0.1.0'
-			major: 0,
-			minor: 1,
-			dot: 0
+			major: 0, minor: 1, dot: 0
 		}
 	},
 	proxy = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
