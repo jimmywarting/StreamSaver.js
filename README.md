@@ -16,7 +16,7 @@ on the client-side where the RAM is really low like on mobile devices
 
 Getting started
 ===============
-**It's important to test browser support before you include stream polyfills**<br>
+**It's important to test browser support before you include the [web stream polyfill][15]**<br>
 cuz the serverWroker need to respondWith a native version of the ReadableStream
 ```html
 <script>
@@ -187,3 +187,4 @@ python -m SimpleHTTPServer 3001
 [12]: https://developer.mozilla.org/en-US/docs/Web/API/Window/open
 [13]: https://developer.mozilla.org/en-US/docs/Web/API/Response
 [14]: https://streams.spec.whatwg.org/#rs-class
+[15]: https://www.npmjs.com/package/web-streams-polyfill
