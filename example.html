@@ -35,12 +35,27 @@
 			<button id="$a">Write some aaa's</button>
 			<button id="$b">Write some bbb's</button>
 			<button id="$c">Write some ccc's</button>
+			<button id="$ipsum">Write a lot of Lorem ipsum</button>
 		</div>
 		<button id="$close" hidden>close stream</button>
 		<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
-		<script src="https://wzrd.in/standalone/web-streams-polyfill@latest"></script>
+		<script
+			src="https://wzrd.in/standalone/web-streams-polyfill@1.1.1"
+			integrity="sha384-8EYry4yokV53rGHMFtPqeVlAPgxn8yxr/RvxC4bZt3vlneaDPzWkSJCvBDBTuXAV"
+			crossorigin
+		></script>
 		<script src="StreamSaver.js"></script>
 		<script>
+			var Lorem = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.' +
+			'Pellentesque gravida condimentum metus et porttitor. Curabitur' +
+			'pharetra vestibulum egestas. Pellentesque quis tortor id ligula' +
+			'cursus luctus ac at nisi. Mauris rutrum mattis vulputate. Donec' +
+			'tempor eget lectus eu rhoncus. Etiam et auctor est. Aenean sem augue,' +
+			'consectetur et ipsum fringilla, rhoncus tincidunt sem. Duis vel' +
+			'rutrum lectus, non ornare dui. Duis non urna non dolor elementum' +
+			'commodo. Praesent commodo maximus lobortis. Curabitur fringilla' +
+			'tellus.'
+
 			$form.onsubmit = event => {
 				event.preventDefault()
 
@@ -69,6 +84,22 @@
 							let uint8array = encoder.encode(data + "\n\n")
 							myFile.write(uint8array)
 						}
+
+						$ipsum.onclick = event => {
+							let text = encoder.encode((Lorem + "\n\n").repeat(2*1024)) // 1 MiB
+							let n = ~~prompt("How many MiB of lorem ipsum text do you want?", '1024')
+							// n *= 1024
+							let que = Promise.resolve()
+							let pump = () => {
+								n-- && que.then(() => {
+									myFile.write(text).then(()=>{setTimeout(pump)})
+									// myFile.write(text).then(()=>pump()) // This should be possible
+								})
+							}
+							pump()
+
+						}
+
 					break; case "video":
 						permission = {name: 'userMedia', video: true}
 					break; case "audio":
