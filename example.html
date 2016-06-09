@@ -133,7 +133,6 @@
 						fetch(url).then(res => {
 							// https://jakearchibald.com/2016/streams-ftw/
 							// The body is a stream :)
-							console.log(res.body)
 							let reader = res.body.getReader()
 							let pump = () => {
 								return reader.read().then(({ value, done }) => {
