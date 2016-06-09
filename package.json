@@ -1,0 +1,24 @@
+{
+    "name": "streamsaver",
+    "version": "0.1.0",
+    "description": "StreamSaver writes stream to the filesystem directly - asynchronous",
+    "main": "StreamSaver.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://jimmywarting@github.com/jimmywarting/StreamSaver.js.git"
+    },
+    "keywords": [
+        "saving",
+        "streams",
+        "html5"
+    ],
+    "author": "Jimmy Wärting <jimmy@warting.se>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/jimmywarting/StreamSaver.js/issues"
+    },
+    "homepage": "https://github.com/jimmywarting/StreamSaver.js#readme"
+}
