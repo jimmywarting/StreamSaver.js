@@ -2,7 +2,7 @@
 	'undefined' != typeof module ? module.exports = definition() :
 	'function' == typeof define && 'object' == typeof define.amd ? define(definition) :
 	this[name] = definition()
-})('fs', () => {
+})('streamSaver', () => {
 	'use strict'
 
 	const

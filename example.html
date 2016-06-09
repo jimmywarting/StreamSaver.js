@@ -64,7 +64,7 @@
 				filename = $form.$filename.value,
 				permission,
 				url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4",
-				myFile = fs.createWriteStream(filename)
+				myFile = streamSaver.createWriteStream(filename)
 
 				$form.remove()
 				$close.hidden = false
@@ -116,7 +116,7 @@
 							"c".repeat(1024)
 						])
 
-						let stream = fs.createBlobReader(blob)
+						let stream = streamSaver.createBlobReader(blob)
 						stream.pipeTo(myFile)
 
 						// This is rather quite simple with fetch
