@@ -58,12 +58,12 @@ window.onmessage = event => {
 				// from a new temporary window, sucks i know...
 				iframe = document.createElement('iframe')
 				iframe.src = location.href
+                iframe.onload = () => {
+                    controller = iframe.contentWindow.controller
+                    pair(event.data, event.ports[0])
+                    iframe.remove()
+                }
 				document.body.appendChild(iframe)
-				iframe.onload = () => {
-					controller = iframe.contentWindow.navigator.serviceWorker.controller
-					pair(event.data, event.ports[0])
-					iframe.remove()
-				}
 			})
 	)
 }
