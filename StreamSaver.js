@@ -5,17 +5,34 @@
 })('streamSaver', () => {
 	'use strict'
 
-	const
-	SECURE = location.protocol == 'https:' || location.hostname == 'localhost',
-	MITM = `https://jimmywarting.github.io/StreamSaver.js/mitm.html`,
-	PROXY = MITM + (SECURE ? '' : '?popup=1')
+	let
+	iframe, loaded
+	secure = location.protocol == 'https:' || location.hostname == 'localhost',
+	streamSaver = {
+		createWriteStream,
+		createBlobReader,
+		supported = false,
+		version: {
+			full: '0.1.0'
+			major: 0,
+			minor: 1,
+			dot: 0
+		}
+	},
+	proxy = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
+	         streamSaver.version.full
 
-	let iframe, loaded
+	try {
+		// Some browser has it but ain't allowed to construct a stream yet
+		supported = !!new ReadableStream()
+	} catch(err) {
+		// if you are running chrome < 52 then you can enable it
+		// `chrome://flags/#enable-experimental-web-platform-features`
+	}
 
 	function createWriteStream(filename, opts) {
 
-		let
-		channel = new MessageChannel,
+		let channel = new MessageChannel,
 		setupChannel = () => new Promise((resolve, reject) => {
 			channel.port1.onmessage = evt => {
 				evt.data.debug &&
@@ -23,14 +40,14 @@
 				resolve()
 			}
 
-			if(SECURE && !iframe) {
+			if(secure && !iframe) {
 				iframe = document.createElement('iframe')
-				iframe.src = PROXY
+				iframe.src = proxy
 				iframe.hidden = true
 				document.body.appendChild(iframe)
 			}
 
-			if(SECURE && !loaded) {
+			if(secure && !loaded) {
 				let fn;
 				iframe.addEventListener('load', fn = evt => {
 					loaded = true
@@ -39,14 +56,13 @@
 				})
 			}
 
-			if(SECURE && loaded) {
+			if(secure && loaded) {
 				iframe.contentWindow.postMessage(filename, '*', [channel.port2])
 			}
 
-			if(!SECURE) {
-				// iframe.contentWindow.postMessage(filename, '*', [channel.port2])
+			if(!secure) {
 				let
-				popup = window.open(PROXY, Math.random()),
+				popup = window.open(proxy, Math.random()),
 				onready = evt => {
 					if(evt.source === popup){
 						popup.postMessage(filename, '*', [channel.port2])
@@ -62,12 +78,17 @@
 		})
 
 		return new WritableStream({
+			// TODO: What is the benefit of doing this:
+			// type: 'bytes',
 			start(error) {
 				// is called immediately, and should perform any actions
 				// necessary to acquire access to the underlying sink.
 				// If this process is asynchronous, it can return a promise
 				// to signal success or failure.
 				return setupChannel()
+
+				// TODO: Can service worker tell us when it was aborted?
+				// if so then we need to listen for such event from the sw
 			},
 			write(chunk) {
 				// is called when a new chunk of data is ready to be written
@@ -76,6 +97,10 @@
 				// implementation guarantees that this method will be called
 				// only after previous writes have succeeded, and never after
 				// close or abort is called.
+
+				// TODO: Kind of important that service worker respond back when
+				// it has been written. Otherwice we can't handle backpressure
+				// This is also important in order to close the new tab...
 				channel.port1.postMessage(chunk)
 			},
 			close() {
@@ -88,6 +113,7 @@
 		}, opts)
 	}
 
+	// May want to have this as a seperate module...
 	function createBlobReader(blob, opts){
 
 		let
@@ -97,9 +123,6 @@
 
 		return new ReadableStream({
 			type: 'bytes',
-			start() {
-
-			},
 			pull(controller) {
 				if(currentChunk == chunks)
 					return controller.close()
@@ -122,9 +145,9 @@
 					currentChunk++
 				})
 			}
-		})
+		}, opts)
 	}
 
-	return { createWriteStream, createBlobReader }
+	return streamSaver
 
 });
