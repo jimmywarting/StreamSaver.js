@@ -31,18 +31,6 @@ function pair(message, port) {
 
         link.href = event.data.href
 		link.dispatchEvent(click)
-
-		// Hmm, could potentialy be safe to close the mitm popup now
-		// since we have forwared the dataChannel to the serviceWorker
-		// and the download has begun
-		// or will the dataChannel break if we close this? i hope not
-		// (it's less important if it's a iframe)
-		// TODO: needs investigation
-		//
-		// Interesting it works to close the mitm and still keep on download
-		// so it gose directly from http > serviceWorker
-		// But there is a catch you can only close the tab not the window
-		// So it can't be a "popup" it has to be a tab to work
 	}
 }
 
@@ -80,5 +68,7 @@ window.onmessage = event => {
 	)
 }
 
+// The opener can't listen to onload event, so we need to help em out!
+// (telling them that we are ready to accept postMessage's)
 opener && opener.postMessage('StreamSaver::loadedPopup', '*')
 </script>

@@ -1,7 +1,7 @@
 StreamSaver.js
 ==============
 
-First I want to thank [eli grey][1] for a fantastic work implementing the
+First I want to thank [Eli Grey][1] for a fantastic work implementing the
 [FileSaver.js][2] to save files & blob's so easily!
 But there is one obstacle - The RAM it can hold and the max blob size limitation
 
@@ -42,7 +42,8 @@ try{
 Syntax
 ======
 
-Writing some plain text
+**Writing some plain text**
+
 ```javascript
 const writeStream = fs.createWriteStream('filename.txt')
 const encoder = new TextEncoder
@@ -53,16 +54,18 @@ writeStream.write(uint8array)
 writeStream.close()
 ```
 
-Read blob as a stream and pipe it
+**Read blob as a stream and pipe it**
+
 ```javascript
 const writeStream = fs.createWriteStream('filename.txt')
-const blob = new Blob([ "a".repeat(1024), "b".repeat(1024), "c".repeat(1024)])
+const blob = new Blob([ 'a'.repeat(1E9*5) ]) // 1*5 MB
 const blobStream = fs.createBlobReader(blob)
 
 blobStream.pipeTo(writeStream)
 ```
 
-Save a media stream
+**Save a media stream**
+
 ```javascript
 get_user_media_stream_somehow().then(mediaStream => {
 	let fr = new FileReader
@@ -99,17 +102,12 @@ get_user_media_stream_somehow().then(mediaStream => {
 	}
 
 })
-
-const writeStream = fs.createWriteStream('filename.txt')
-const blob = new Blob([ "a".repeat(1024), "b".repeat(1024), "c".repeat(1024)])
-const blobStream = fs.createBlobReader(blob)
-
-blobStream.pipeTo(writeStream)
 ```
 
-Get a "stream" from ajax<br>
+**Get a "stream" from ajax**<br>
 res.body is a readableByteStream, but don't have pipeTo yet<br>
 So we have to use the reader instead which is the underlying method in streams
+
 ```javascript
 fetch(url).then(res => {
 	const writeStream = fs.createWriteStream('filename.txt')
@@ -117,20 +115,18 @@ fetch(url).then(res => {
 	// res.body.pipeTo(writeStream)
 
 	const reader = res.body.getReader()
-	const pump = () => {
-		return reader.read().then(({ value, done }) => {
-			if (done) {
-				writeStream.close()
-				return
-			}
-
-			writeStream.write(value) // write one chunk
-			return pump() // get next chunk
-		})
-	}
+	const pump = () => reader.read()
+		.then(({ value, done }) => done
+			// close the stream so we stop writing
+			? writeStream.close()
+			// Write one chunk, then get the next one
+			: writeStream.write(value).then(pump)
+		)
 
 	// Start the reader
-	pump()
+	pump().then(()=>{
+		console.log('Closed the stream, Done writing')
+	})
 })
 ```
 
@@ -173,6 +169,14 @@ python -m SimpleHTTPServer 3001
 # then open localhost:3001
 ```
 
+Consensus
+=========
+Go ahead and vote for how important this feature is
+
+[Fetch][16] MS Edge status: Preview
+[serviceWorker][17] MS Edge status: In Development
+[streams][18] Firefox Status: ASSIGNED
+
 [1]: https://github.com/eligrey
 [2]: https://github.com/eligrey/FileSaver.js
 [3]: https://github.com/jimmywarting/StreamSaver.js/blob/master/example.html
@@ -188,3 +192,6 @@ python -m SimpleHTTPServer 3001
 [13]: https://developer.mozilla.org/en-US/docs/Web/API/Response
 [14]: https://streams.spec.whatwg.org/#rs-class
 [15]: https://www.npmjs.com/package/web-streams-polyfill
+[16]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/fetchapi
+[17]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/serviceworker
+[18]: https://bugzilla.mozilla.org/show_bug.cgi?id=1128959
