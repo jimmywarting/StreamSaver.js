@@ -89,11 +89,6 @@ get_user_media_stream_somehow().then(mediaStream => {
 
 		chunks = chunks.then(() => new Promise(resolve => {
 			fr.onload = () => {
-				// Should we let the serviceWorker be able to accept
-				// anything other then uint8array? ReadableStream don't seems
-				// so happy with anything else... but could load of some work
-				// of the main thread +1
-				// let uint8array = new Uint8Array(fr.result)
 				writeStream.write(fr.result)
 				resolve()
 			}
