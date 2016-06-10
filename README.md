@@ -164,7 +164,7 @@ and also WritableStream for convenience and backpressure
 Test localy
 ```bash
 # A simple php or python server is enough
-php -S php -S localhost:3001
+php -S localhost:3001
 python -m SimpleHTTPServer 3001
 # then open localhost:3001
 ```
