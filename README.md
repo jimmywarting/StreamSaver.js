@@ -78,11 +78,9 @@ get_user_media_stream_somehow().then(mediaStream => {
 	mediaRecorder.start()
 	closeBtn.onclick = event => {
 		mediaRecorder.stop()
-		setTimeout(()=>{
-			chunks.then(evt => {
-				writeStream.close()
-			})
-		}, 1000)
+		setTimeout(() =>
+			chunks.then(evt => writeStream.close())
+		, 1000)
 	}
 	mediaRecorder.ondataavailable = evt => {
 		let blob = evt.data
