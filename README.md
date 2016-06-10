@@ -19,23 +19,14 @@ Getting started
 **It's important to test browser support before you include the [web stream polyfill][15]**<br>
 cuz the serverWroker need to respondWith a native version of the ReadableStream
 ```html
-<script>
-var supported = false
-try{
-	// Some browser has it but ain't allowed to construct a stream yet
-	supported = !!new ReadableStream()
-} catch(err) {
-	// if you are running chrome < 52 then you can enable it
-	// `chrome://flags/#enable-experimental-web-platform-features`
-}
-</script>
+<script src="StreamSaver.js"></script> <!-- load before streams polyfill to detect support -->
 <script src="https://wzrd.in/standalone/web-streams-polyfill@latest"></script>
-<script src="StreamSaver.js"></script>
 <script>
 	// it also support commonJs and amd
-	import { createWriteStream } from 'StreamSaver'
-	const { createWriteStream } = require('StreamSaver')
-	{ createWriteStream } = window.fs
+	import { createWriteStream, supported, version } from 'StreamSaver'
+	const { createWriteStream, supported, version } = require('StreamSaver')
+	const { createWriteStream, supported, version } = window.streamSaver
+	alert( supported )
 </script>
 ```
 
@@ -76,12 +67,14 @@ get_user_media_stream_somehow().then(mediaStream => {
 
 	// Start recording
 	mediaRecorder.start()
+	
 	closeBtn.onclick = event => {
 		mediaRecorder.stop()
 		setTimeout(() =>
 			chunks.then(evt => writeStream.close())
 		, 1000)
 	}
+	
 	mediaRecorder.ondataavailable = evt => {
 		let blob = evt.data
 
