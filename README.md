@@ -117,9 +117,9 @@ fetch(url).then(res => {
 		)
 
 	// Start the reader
-	pump().then(()=>{
+	pump().then(() => 
 		console.log('Closed the stream, Done writing')
-	})
+	)
 })
 ```
 
