@@ -55,7 +55,8 @@ const blobStream = streamSaver.createBlobReader(blob)
 blobStream.pipeTo(writeStream)
 ```
 
-**Save a media stream**
+###Save a media stream
+
 
 ```javascript
 get_user_media_stream_somehow().then(mediaStream => {
