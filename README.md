@@ -33,7 +33,7 @@ cuz the serverWroker need to respondWith a native version of the ReadableStream
 Syntax
 ======
 
-**Writing some plain text**
+### Writing some plain text
 
 ```javascript
 const writeStream = streamSaver.createWriteStream('filename.txt')
@@ -45,7 +45,7 @@ writeStream.write(uint8array)
 writeStream.close()
 ```
 
-**Read blob as a stream and pipe it**
+### Read blob as a stream and pipe it
 
 ```javascript
 const writeStream = streamSaver.createWriteStream('filename.txt')
@@ -55,7 +55,7 @@ const blobStream = streamSaver.createBlobReader(blob)
 blobStream.pipeTo(writeStream)
 ```
 
-###Save a media stream
+### Save a media stream
 
 
 ```javascript
@@ -91,7 +91,7 @@ get_user_media_stream_somehow().then(mediaStream => {
 })
 ```
 
-**Get a "stream" from ajax**<br>
+### Get a "stream" from ajax
 res.body is a readableByteStream, but don't have pipeTo yet<br>
 So we have to use the reader instead which is the underlying method in streams
 
