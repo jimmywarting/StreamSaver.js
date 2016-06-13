@@ -81,7 +81,7 @@ get_user_media_stream_somehow().then(mediaStream => {
 
 		chunks = chunks.then(() => new Promise(resolve => {
 			fr.onload = () => {
-				writeStream.write(fr.result)
+				writeStream.write(new Uint8Array(fr.result))
 				resolve()
 			}
 			fr.readAsArrayBuffer(blob)
