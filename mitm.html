@@ -38,9 +38,9 @@ window.onmessage = event => {
     // Register the worker, then forward the dataChannel to the worker
     // So they can talk directly, so we don't have to be "the middle man" any
     // longer
-    navigator.serviceWorker.getRegistration('./').then(sw => sw
+    navigator.serviceWorker.getRegistration('/').then(sw => sw
 		? pair(event.data, event.ports[0])
-		: navigator.serviceWorker.register('sw.js', {scope: './'})
+		: navigator.serviceWorker.register('sw.js', {scope: '/'})
 			.then(() => navigator.serviceWorker.ready)
 			.then(() => {
 				// the navigator.serviceWorker.controller is frozen and allways
