@@ -65,7 +65,7 @@ function hijacke(uniqLink, stream, data, port){
 		headers['Content-Length'] = data.size
 
     self.addEventListener('fetch', listener = event => {
-		console.log("handleing fetch for", event.request.url)
+
         if(!event.request.url.includes(uniqLink))
     		return
 
@@ -78,5 +78,6 @@ function hijacke(uniqLink, stream, data, port){
     	event.respondWith(res)
     })
 
-	port.postMessage({download: location.origin + '/' + uniqLink})
+	// Any better way to get the scope of the service worker???
+	port.postMessage({download: location.href.replace('sw.js', uniqLink)})
 }
