@@ -75,10 +75,6 @@
 						$writer.hidden = false
 						let encoder = new TextEncoder
 
-						let data = "a".repeat(1024)
-						let uint8array = encoder.encode(data + "\n\n")
-						myFile.write(uint8array) // Write some data to triger saving
-
 						$a.onclick = $b.onclick = $c.onclick = event => {
 							let data = event.target.id[1].repeat(1024)
 							let uint8array = encoder.encode(data + "\n\n")
@@ -154,9 +150,6 @@
 
 						client.add(torrentId, function (torrent) {
 
-							torrent.on('download', function (bytes, a, b) {
-								console.log('just downloaded: ' + bytes)
-							})
 							var meter = document.createElement('meter')
 							document.body.appendChild(meter)
 
@@ -166,7 +159,7 @@
 							}, 200)
 
 							torrent.files.forEach(file => {
-								let myFile = streamSaver.createWriteStream(file.name)
+								let myFile = streamSaver.createWriteStream(file.name, file.length)
 
 								file.createReadStream()
 									.on('data', data => myFile.write(data))

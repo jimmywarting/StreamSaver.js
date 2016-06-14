@@ -1,3 +1,5 @@
+'use strict'
+
 // This should be called once per download
 // Each event has a dataChannel that the data will be piped throught
 self.onmessage = event => {
@@ -8,15 +10,6 @@ self.onmessage = event => {
         let stream = createStream(resolve, reject, event.ports[0])
         hijacke(uniqLink, stream, event.data, event.ports[0])
     })
-
-	// Tell the middle man to open the link to kick start the stream download
-	clients.matchAll({includeUncontrolled: true, type: 'window'}).then(clients => {
-		for(let client of clients) {
-			client.postMessage({
-		        href: uniqLink
-		    })
-		}
-	})
 
     // Beginning in Chrome 51, event is an ExtendableMessageEvent, which supports
     // the waitUntil() method for extending the lifetime of the event handler
@@ -57,8 +50,21 @@ function createStream(resolve, reject, port){
 
 
 
-function hijacke(uniqLink, stream, filename, port){
-	let listener
+function hijacke(uniqLink, stream, data, port){
+	let listener, filename, headers
+
+	if(typeof data === 'string')
+		filename = data
+
+	headers = {
+		'Content-Type': 'application/octet-stream; charset=utf-8',
+		'Content-Disposition': 'attachment; filename=' + (filename || data.filename)
+	}
+
+	if(data.size)
+		headers['Content-Length'] = data.size
+
+	port.postMessage({download: location.origin + '/' + uniqLink})
 
     self.addEventListener('fetch', listener = event => {
 
@@ -69,11 +75,7 @@ function hijacke(uniqLink, stream, filename, port){
 
         self.removeEventListener('fetch', listener)
 
-    	let res = new Response(stream, {
-    		headers: {
-				'Content-Disposition': 'attachment; filename=' + filename
-    		}
-    	})
+    	let res = new Response(stream, { headers })
 
     	event.respondWith(res)
     })

@@ -1,4 +1,4 @@
-;((name,definition) => {
+;((name, definition) => {
 	'undefined' != typeof module ? module.exports = definition() :
 	'function' == typeof define && 'object' == typeof define.amd ? define(definition) :
 	this[name] = definition()
@@ -13,8 +13,8 @@
 		createBlobReader,
 		supported: false,
 		version: {
-			full: '0.1.0',
-			major: 0, minor: 1, dot: 0
+			full: '0.2.0',
+			major: 0, minor: 2, dot: 0
 		}
 	},
 	proxy = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
@@ -28,14 +28,28 @@
 		// `chrome://flags/#enable-experimental-web-platform-features`
 	}
 
-	function createWriteStream(filename, opts) {
+	function createWriteStream(filename, queuingStrategy, size) {
+
+		// normalize arguments
+		if (Number.isFinite(queuingStrategy))
+			[size, queuingStrategy] = [queuingStrategy, size]
 
 		let channel = new MessageChannel,
+		popup,
 		setupChannel = () => new Promise((resolve, reject) => {
 			channel.port1.onmessage = evt => {
 				evt.data.debug &&
 				evt.data.debug === 'Mocking a download request' &&
 				resolve()
+
+				if(evt.data.download) {
+					if(!secure) popup.close() // don't need the popup any longer
+					let link = document.createElement('a')
+					let click = new MouseEvent('click')
+
+					link.href = evt.data.download
+					link.dispatchEvent(click)
+				}
 			}
 
 			if(secure && !iframe) {
@@ -50,20 +64,20 @@
 				iframe.addEventListener('load', fn = evt => {
 					loaded = true
 					iframe.removeEventListener('load', fn)
-					iframe.contentWindow.postMessage(filename, '*', [channel.port2])
+					iframe.contentWindow.postMessage(
+						{filename, size}, '*', [channel.port2])
 				})
 			}
 
 			if(secure && loaded) {
-				iframe.contentWindow.postMessage(filename, '*', [channel.port2])
+				iframe.contentWindow.postMessage({filename, size}, '*', [channel.port2])
 			}
 
 			if(!secure) {
-				let
-				popup = window.open(proxy, Math.random()),
-				onready = evt => {
+				popup = window.open(proxy, Math.random())
+				let onready = evt => {
 					if(evt.source === popup){
-						popup.postMessage(filename, '*', [channel.port2])
+						popup.postMessage({filename, size}, '*', [channel.port2])
 						removeEventListener('message', onready)
 					}
 				}
@@ -108,7 +122,7 @@
 			abort(e) {
 				console.error('Something went wrong!', e)
 			}
-		}, opts)
+		}, queuingStrategy)
 	}
 
 	// May want to have this as a seperate module...

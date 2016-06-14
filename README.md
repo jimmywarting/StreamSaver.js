@@ -33,6 +33,12 @@ cuz the serverWroker need to respondWith a native version of the ReadableStream
 Syntax
 ======
 
+```javascript
+// If you know what the size is going to be then you can specify
+// that as 2nd arguments and it will use that as Content-Length header
+const writeStream = streamSaver.createWriteStream('filename.txt', size)
+```
+
 ### Writing some plain text
 
 ```javascript
@@ -130,7 +136,7 @@ client.add(torrentId, torrent => {
 	// Download the first file
 
 	const file = torrent.files[0]
-	const writeStream = streamSaver.createWriteStream(file.name)
+	const writeStream = streamSaver.createWriteStream(file.name, file.size)
 
 	// Unfortunately we have two different stream protocol so we can't pipe.
 	file.createReadStream()

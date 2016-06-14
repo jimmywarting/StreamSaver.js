@@ -5,8 +5,8 @@
 	the service worker
 	The service worker is capitable of intercepting all request and fork theire
 	own "fake" response - wish we are going to craft
-	when the worker then recives a stream then the worker will tell this middle
-	man to open up a link that will start the download
+	when the worker then recives a stream then the worker will tell the opener
+	to open up a link that will start the download
 -->
 <script>
 let controller = navigator.serviceWorker.controller
@@ -22,16 +22,6 @@ function pair(message, port) {
     // will in turn trigger the onmessage handler on messageChannel.port1.
     // See https://html.spec.whatwg.org/multipage/workers.html#dom-worker-postmessage
     controller.postMessage(message, [port])
-
-	// serviceWorker is telling us to open up a uniq link that will start
-	// saving the file to the disk with the help of Content-Disposition
-	navigator.serviceWorker.onmessage = event => {
-        let link = document.createElement('a')
-        let click = new MouseEvent('click')
-
-        link.href = event.data.href
-		link.dispatchEvent(click)
-	}
 }
 
 // message event is the first thing we need to setup a listner for
