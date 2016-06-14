@@ -65,7 +65,7 @@ function hijacke(uniqLink, stream, data, port){
 		headers['Content-Length'] = data.size
 
     self.addEventListener('fetch', listener = event => {
-
+		console.log("Handleing ", event.request.url)
         if(!event.request.url.includes(uniqLink))
     		return
 
