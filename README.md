@@ -122,21 +122,21 @@ fetch(url).then(res => {
 to use some kind of [Custom chunk](https://webtorrent.io/docs#-client-add-torrentid-opts-function-ontorrent-torrent-) store (must follow [abstract-chunk-store](https://www.npmjs.com/package/abstract-chunk-store) API)
 
 ```javascript
-	const client = new WebTorrent()
-	const torrentId = 'magnet:?xt=urn:btih:6a9759bffd5c0af65319979fb7832189f4f3c35d&dn=sintel.mp4&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.webtorrent.io&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel-1024-surround.mp4'
-	// Sintel, a free, Creative Commons movie
+const client = new WebTorrent()
+const torrentId = 'magnet:?xt=urn:btih:6a9759bffd5c0af65319979fb7832189f4f3c35d&dn=sintel.mp4&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.webtorrent.io&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel-1024-surround.mp4'
+// Sintel, a free, Creative Commons movie
 
-	client.add(torrentId, torrent => {
-		// Download the first file
+client.add(torrentId, torrent => {
+	// Download the first file
 
-		const file = torrent.files[0]
-		const writeStream = streamSaver.createWriteStream(file.name)
+	const file = torrent.files[0]
+	const writeStream = streamSaver.createWriteStream(file.name)
 
-		// Unfortunately we have two different stream protocol so we can't pipe.
-		file.createReadStream()
-			.on('data', data => writeStream.write(data))
-			.on('end', () => writeStream.close())
-	})
+	// Unfortunately we have two different stream protocol so we can't pipe.
+	file.createReadStream()
+		.on('data', data => writeStream.write(data))
+		.on('end', () => writeStream.close())
+})
 ```
 
 How is this possible?
