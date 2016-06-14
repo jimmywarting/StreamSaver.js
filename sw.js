@@ -64,10 +64,8 @@ function hijacke(uniqLink, stream, data, port){
 	if(data.size)
 		headers['Content-Length'] = data.size
 
-	port.postMessage({download: location.origin + '/' + uniqLink})
-
     self.addEventListener('fetch', listener = event => {
-
+		console.log("handleing fetch for", event.request.url)
         if(!event.request.url.includes(uniqLink))
     		return
 
@@ -79,4 +77,6 @@ function hijacke(uniqLink, stream, data, port){
 
     	event.respondWith(res)
     })
+
+	port.postMessage({download: location.origin + '/' + uniqLink})
 }
