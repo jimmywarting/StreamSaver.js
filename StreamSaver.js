@@ -48,7 +48,9 @@
 					let click = new MouseEvent('click')
 
 					link.href = evt.data.download
-					link.dispatchEvent(click)
+					let i = document.createElement('iframe')
+					i.src = 'https://jimmywarting.github.io/StreamSaver.js/intercept-me-nr0.3829725485325626'
+					document.body.appendChild(i)
 				}
 			}
 
