@@ -68,14 +68,14 @@ get_user_media_stream_somehow().then(mediaStream => {
 
 	// Start recording
 	mediaRecorder.start()
-	
+
 	closeBtn.onclick = event => {
 		mediaRecorder.stop()
 		setTimeout(() =>
 			chunks.then(evt => writeStream.close())
 		, 1000)
 	}
-	
+
 	mediaRecorder.ondataavailable = evt => {
 		let blob = evt.data
 
@@ -111,10 +111,32 @@ fetch(url).then(res => {
 		)
 
 	// Start the reader
-	pump().then(() => 
+	pump().then(() =>
 		console.log('Closed the stream, Done writing')
 	)
 })
+```
+
+### Get a node-stream from [webtorrent][19]
+**Note** it still keeps the data in memory, A more correct way to do this would be
+to use some kind of [Custom chunk](https://webtorrent.io/docs#-client-add-torrentid-opts-function-ontorrent-torrent-) store (must follow [abstract-chunk-store](https://www.npmjs.com/package/abstract-chunk-store) API)
+
+```javascript
+	const client = new WebTorrent()
+	const torrentId = 'magnet:?xt=urn:btih:6a9759bffd5c0af65319979fb7832189f4f3c35d&dn=sintel.mp4&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.webtorrent.io&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel-1024-surround.mp4'
+	// Sintel, a free, Creative Commons movie
+
+	client.add(torrentId, torrent => {
+		// Download the first file
+
+		const file = torrent.files[0]
+		const writeStream = streamSaver.createWriteStream(file.name)
+
+		// Unfortunately we have two different stream protocol so we can't pipe.
+		file.createReadStream()
+			.on('data', data => writeStream.write(data))
+			.on('end', () => writeStream.close())
+	})
 ```
 
 How is this possible?
@@ -182,3 +204,4 @@ Go ahead and vote for how important this feature is
 [16]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/fetchapi
 [17]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/serviceworker
 [18]: https://bugzilla.mozilla.org/show_bug.cgi?id=1128959
+[19]: https://webtorrent.io

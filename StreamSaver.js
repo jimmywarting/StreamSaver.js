@@ -113,6 +113,9 @@
 
 	// May want to have this as a seperate module...
 	function createBlobReader(blob, opts){
+		// Could just do: stream = (new Response(blob)).body
+		// but it's not fully developt yet
+		// Any ides how to upgrade a `Reader` to a full ReadableByteStream?
 
 		let
 		highWaterMark = 524288,

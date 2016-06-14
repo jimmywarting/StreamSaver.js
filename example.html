@@ -39,6 +39,7 @@
 		</div>
 		<button id="$close" hidden>close stream</button>
 		<script src="StreamSaver.js"></script>
+		<script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
 		<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
 		<script src="https://wzrd.in/standalone/web-streams-polyfill@1.1.1"
 			integrity="sha384-8EYry4yokV53rGHMFtPqeVlAPgxn8yxr/RvxC4bZt3vlneaDPzWkSJCvBDBTuXAV"
@@ -96,7 +97,6 @@
 								})
 							}
 							pump()
-
 						}
 
 					break; case "video":
@@ -146,6 +146,37 @@
 							}
 							pump()
 						})
+					break; case "torrent":
+
+						var client = new WebTorrent()
+						// Sintel, a free, Creative Commons movie
+						var torrentId = 'magnet:?xt=urn:btih:6a9759bffd5c0af65319979fb7832189f4f3c35d&dn=sintel.mp4&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.webtorrent.io&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel-1024-surround.mp4'
+
+						client.add(torrentId, function (torrent) {
+
+							torrent.on('download', function (bytes, a, b) {
+								console.log('just downloaded: ' + bytes)
+							})
+							var meter = document.createElement('meter')
+							document.body.appendChild(meter)
+
+							// Print out progress every 5 seconds
+							var interval = setInterval(() => {
+								meter.value = torrent.progress
+							}, 200)
+
+							torrent.files.forEach(file => {
+								let myFile = streamSaver.createWriteStream(file.name)
+
+								file.createReadStream()
+									.on('data', data => myFile.write(data))
+									.on('end', () => {
+										console.log("ended")
+										myFile.close()
+									})
+							})
+						})
+
 					break;
 				}
 
