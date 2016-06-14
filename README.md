@@ -119,7 +119,7 @@ fetch(url).then(res => {
 
 ### Get a node-stream from [webtorrent][19]
 **Note** it still keeps the data in memory, A more correct way to do this would be
-to use some kind of [Custom chunk](https://webtorrent.io/docs#-client-add-torrentid-opts-function-ontorrent-torrent-) store (must follow [abstract-chunk-store](https://www.npmjs.com/package/abstract-chunk-store) API)
+to use some kind of [Custom chunk store](https://webtorrent.io/docs#-client-add-torrentid-opts-function-ontorrent-torrent-) (must follow [abstract-chunk-store](https://www.npmjs.com/package/abstract-chunk-store) API)
 
 ```javascript
 const client = new WebTorrent()
