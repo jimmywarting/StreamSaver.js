@@ -22,7 +22,7 @@
 
 	try {
 		// Some browser has it but ain't allowed to construct a stream yet
-		supported = !!new ReadableStream()
+		streamSaver.supported = !!new ReadableStream()
 	} catch(err) {
 		// if you are running chrome < 52 then you can enable it
 		// `chrome://flags/#enable-experimental-web-platform-features`
