@@ -112,7 +112,6 @@
 
 				// TODO: Kind of important that service worker respond back when
 				// it has been written. Otherwice we can't handle backpressure
-				// This is also important in order to close the new tab...
 				channel.port1.postMessage(chunk)
 			},
 			close() {
