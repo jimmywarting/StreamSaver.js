@@ -2,7 +2,7 @@ StreamSaver.js
 ==============
 
 First I want to thank [Eli Grey][1] for a fantastic work implementing the
-[FileSaver.js][2] to save files & blob's so easily!
+[FileSaver.js][2] to save files & blobs so easily!
 But there is one obstacle - The RAM it can hold and the max blob size limitation
 
 StreamSaver.js takes a different approach. Instead of saving data in client-side
@@ -10,14 +10,14 @@ storage or in memory you could now actually create a writable stream directly to
 the file system (I'm not talking about chromes sandboxed file system)
 
 StreamSaver.js is the solution to saving streams on the client-side.
-It is perfect for webapps that need to save really large amount of data created
-on the client-side where the RAM is really low like on mobile devices
+It is perfect for webapps that need to save really large amounts of data created
+on the client-side, where the RAM is really limited, like on mobile devices.
 
 
 Getting started
 ===============
 **It's important to test browser support before you include the [web stream polyfill][15]**<br>
-cuz the serverWroker need to respondWith a native version of the ReadableStream
+because the serviceWorker needs to respondWith a native version of the ReadableStream
 ```html
 <script src="StreamSaver.js"></script> <!-- load before streams polyfill to detect support -->
 <script src="https://wzrd.in/standalone/web-streams-polyfill@latest"></script>
@@ -124,7 +124,7 @@ fetch(url).then(res => {
 ```
 
 ### Get a node-stream from [webtorrent][19]
-**Note** it still keeps the data in memory, A more correct way to do this would be
+**Note** it still keeps the data in memory. A more correct way to do this would be
 to use some kind of [Custom chunk store](https://webtorrent.io/docs#-client-add-torrentid-opts-function-ontorrent-torrent-) (must follow [abstract-chunk-store](https://www.npmjs.com/package/abstract-chunk-store) API)
 
 ```javascript
@@ -147,26 +147,26 @@ client.add(torrentId, torrent => {
 
 How is this possible?
 =====================
-There is not any magical saveAs() function that saves a stream, file or blob
+There is not any magical saveAs() function that saves a stream, file or blob.
 The way we mostly save Blobs/Files today is with the help of [a[download]][5] attribute
 [FileSaver.js][2] takes advantage of this and create a convenient saveAs(blob, filename)
 function, very fantastic, but you can't create a objectUrl from a stream and attach
 it to a link...
 ```javascript
 link = document.createElement('a')
-link.href = URL.createObjectURL(stream) // DOSE NOT WORK
+link.href = URL.createObjectURL(stream) // DOES NOT WORK
 link.download = 'filename'
 link.click() // Save
 ```
-So the one and only other solution is to do what the server dose: Send a stream
+So the one and only other solution is to do what the server does: Send a stream
 with Content-Disposition header to tell the browser to save the file.
 But we don't have a server! So the only solution is to create a service worker
 that can intercept links and use [respondWith()][4]
 This will scream high restriction just by mentioning service worker. It's such a
 powerful tool that it need to run on https but there is a workaround for http
-sites: popups + 3th party https site. Who would have guess that?
-But i won't go into details on how that works. (The idea is to use a middle man
-to send a dataChannel from http to a serviceWorker that runs on https)
+sites: popups + 3rd party https site. Who would have guess that?
+But I won't go into details on how that works. (The idea is to use a middle man
+to send a dataChannel from http to a serviceWorker that runs on https).
 
 So it all boils down to using
 [serviceWorker][6], [MessageChannel][7], [postMessage][8], [fetch][9],
