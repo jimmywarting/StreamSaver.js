@@ -14,6 +14,18 @@ It is perfect for webapps that need to save really large amounts of data created
 on the client-side, where the RAM is really limited, like on mobile devices.
 
 
+Supported browsers
+------------------
+
+| Browser    | Supported | Missing                 |
+| ---------- | --------- | ----------------------- |
+| Opera 39+  | Yes       |                         |
+| Chrome 52+ | Yes       |                         |
+| Firefox    | No        | Streams                 |
+| Safari TP  | No        | Streams, Fetch, SW      |
+| Edge       | No        | Streams, SW             |
+| IE         | No        | Everything (IE is dead) |
+
 Getting started
 ===============
 **It's important to test browser support before you include the [web stream polyfill][15]**<br>
@@ -171,9 +183,7 @@ to send a dataChannel from http to a serviceWorker that runs on https).
 So it all boils down to using
 [serviceWorker][6], [MessageChannel][7], [postMessage][8], [fetch][9],
 [respondWith][10], [iframes][11], [popups][12] (for http -> https -> serviceWorker),
-[Response][13] and last but not least: a flag that enables you to construct [ReadableStream][14]
-`chrome://flags/#enable-experimental-web-platform-features`
-and also WritableStream for convenience and backpressure
+[Response][13] and also WritableStream for convenience and backpressure
 
 
 Test localy
