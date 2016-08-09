@@ -15,7 +15,7 @@ on the client-side, where the RAM is really limited, like on mobile devices.
 
 
 Supported browsers
-------------------
+==================
 
 | Browser    | Supported | Missing                 |
 | ---------- | --------- | ----------------------- |
@@ -25,6 +25,13 @@ Supported browsers
 | Safari TP  | No        | Streams, Fetch, SW      |
 | Edge       | No        | Streams, SW             |
 | IE         | No        | Everything (IE is dead) |
+
+
+Aha moments
+===========
+  - Chrome don't show that the file is beeing download and won't give you a dialog to choose where to save it until you have written at least 1024 bytes or so (think headers are included)... Or until you close the stream
+  - Chrome was capitable of writing more than 15 GB of data without any memory issues
+
 
 Getting started
 ===============
