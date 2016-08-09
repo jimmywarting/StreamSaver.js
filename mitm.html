@@ -9,20 +9,11 @@
 	to open up a link that will start the download
 -->
 <script>
-let controller = navigator.serviceWorker.controller
 let host = "jimmywarting.github.io"
 
 // Service worker only works on https, 127.0.0.1 and localhost
 if (window.location.host == host && window.location.protocol != "https:")
     window.location.protocol = "https:"
-
-function pair(message, port) {
-	// This sends the message data as well as transferring messageChannel.port2 to the service worker.
-    // The service worker can then use the transferred port to reply via postMessage(), which
-    // will in turn trigger the onmessage handler on messageChannel.port1.
-    // See https://html.spec.whatwg.org/multipage/workers.html#dom-worker-postmessage
-    controller.postMessage(message, [port])
-}
 
 // message event is the first thing we need to setup a listner for
 // don't want the opener to do a random timeout - instead they can listen for
@@ -38,24 +29,39 @@ window.onmessage = event => {
     // Register the worker, then forward the dataChannel to the worker
     // So they can talk directly, so we don't have to be "the middle man" any
     // longer
-    navigator.serviceWorker.getRegistration('./').then(sw => sw
-		? pair(event.data, event.ports[0])
-		: navigator.serviceWorker.register('sw.js', {scope: './'})
-			.then(() => navigator.serviceWorker.ready)
-			.then(() => {
-				// the navigator.serviceWorker.controller is frozen and allways
-				// null, so instead of reloading the page we get the controller
-				// from a new temporary window, sucks i know...
-				iframe = document.createElement('iframe')
-				iframe.src = location.href
-                iframe.onload = () => {
-                    controller = iframe.contentWindow.controller
-                    pair(event.data, event.ports[0])
-                    iframe.remove()
-                }
-				document.body.appendChild(iframe)
-			})
-	)
+    navigator.serviceWorker.getRegistration('./').then(swReg => {
+    	if (!swReg) {
+    		return new Promise((resolve, reject) => {
+    			navigator.serviceWorker.register('sw.js', {scope: './'}).then(swReg => {
+    				resolve(swReg);
+    			});
+    		});
+    	}
+    	return swReg;
+    }).then(swReg => {
+		if (swReg.active) {
+			return swReg.active;
+		}
+		let swRegTmp = swReg.installing || swReg.waiting;
+		if (swRegTmp) {
+			return new Promise((resolve, reject) => {
+				swRegTmp.onstatechange = () => {
+					if (swRegTmp.state === 'activated') {
+						resolve(swReg.active);
+					}
+				};
+			});
+		} else {
+			// This should not happen
+			// TODO: WTF?! state
+		}
+    }).then(sw => {
+    	// This sends the message data as well as transferring messageChannel.port2 to the service worker.
+        // The service worker can then use the transferred port to reply via postMessage(), which
+        // will in turn trigger the onmessage handler on messageChannel.port1.
+        // See https://html.spec.whatwg.org/multipage/workers.html#dom-worker-postmessage
+        sw.postMessage(event.data, [event.ports[0]])
+    });
 }
 
 // The opener can't listen to onload event, so we need to help em out!
