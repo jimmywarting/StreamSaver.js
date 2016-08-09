@@ -2,7 +2,8 @@
 	mitm.html is the lite "man in the middle"
 
 	This is only meant to signal the opener's messageChannel to
-	the service worker
+	the service worker - when that is done this mitm can be closed
+
 	The service worker is capitable of intercepting all request and fork theire
 	own "fake" response - wish we are going to craft
 	when the worker then recives a stream then the worker will tell the opener
@@ -12,6 +13,7 @@
 let host = "jimmywarting.github.io"
 
 // Service worker only works on https, 127.0.0.1 and localhost
+// So we just redirect asap
 if (window.location.host == host && window.location.protocol != "https:")
     window.location.protocol = "https:"
 
@@ -19,49 +21,33 @@ if (window.location.host == host && window.location.protocol != "https:")
 // don't want the opener to do a random timeout - instead they can listen for
 // the ready event
 window.onmessage = event => {
-    if(!event.ports || !event.ports.length) {
-        // It's important to have a messageChannel, don't want to interfair
-        // with other simultainus downloads
+	let {data, ports} = event
 
+	// It's important to have a messageChannel, don't want to interfair
+	// with other simultainus downloads
+    if(!ports || !ports.length)
         throw new TypeError("Mehhh! You didn't send a messageChannel")
-    }
 
     // Register the worker, then forward the dataChannel to the worker
     // So they can talk directly, so we don't have to be "the middle man" any
     // longer
     navigator.serviceWorker.getRegistration('./').then(swReg => {
-    	if (!swReg) {
-    		return new Promise((resolve, reject) => {
-    			navigator.serviceWorker.register('sw.js', {scope: './'}).then(swReg => {
-    				resolve(swReg);
-    			});
-    		});
-    	}
-    	return swReg;
+		return swReg || navigator.serviceWorker.register('sw.js', {scope: './'})
     }).then(swReg => {
-		if (swReg.active) {
-			return swReg.active;
+		// This sends the message data as well as transferring
+		// messageChannel.port2 to the service worker. The service worker can
+		// then use the transferred port to reply via postMessage(), which
+		// will in turn trigger the onmessage handler on messageChannel.port1.
+		let swRegTmp = swReg.installing || swReg.waiting
+
+		if (swReg.active)
+			return swReg.active.postMessage(data, [ports[0]])
+
+		swRegTmp.onstatechange = () => {
+			if (swRegTmp.state === 'activated')
+				swReg.active.postMessage(data, [ports[0]])
 		}
-		let swRegTmp = swReg.installing || swReg.waiting;
-		if (swRegTmp) {
-			return new Promise((resolve, reject) => {
-				swRegTmp.onstatechange = () => {
-					if (swRegTmp.state === 'activated') {
-						resolve(swReg.active);
-					}
-				};
-			});
-		} else {
-			// This should not happen
-			// TODO: WTF?! state
-		}
-    }).then(sw => {
-    	// This sends the message data as well as transferring messageChannel.port2 to the service worker.
-        // The service worker can then use the transferred port to reply via postMessage(), which
-        // will in turn trigger the onmessage handler on messageChannel.port1.
-        // See https://html.spec.whatwg.org/multipage/workers.html#dom-worker-postmessage
-        sw.postMessage(event.data, [event.ports[0]])
-    });
+    })
 }
 
 // The opener can't listen to onload event, so we need to help em out!
