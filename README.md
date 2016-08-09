@@ -181,7 +181,7 @@ Test localy
 # A simple php or python server is enough
 php -S localhost:3001
 python -m SimpleHTTPServer 3001
-# then open localhost:3001
+# then open localhost:3001/example.html
 ```
 
 Consensus
