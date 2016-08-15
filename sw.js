@@ -78,6 +78,5 @@ function hijacke(uniqLink, stream, data, port){
     	event.respondWith(res)
     })
 
-	// Any better way to get the scope of the service worker???
-	port.postMessage({download: location.href.replace('sw.js', uniqLink)})
+	port.postMessage({download: self.registration.scope + uniqLink})
 }
