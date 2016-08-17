@@ -30,6 +30,7 @@ Supported browsers
 Aha moments
 ===========
   - Chrome don't show that the file is beeing download and won't give you a dialog to choose where to save it until you have written at least 1024 bytes or so (think headers are included)... Or until you close the stream
+  But that only applies when you have the "ask where to save each time" turned on in your browser settings
   - Chrome was capitable of writing more than 15 GB of data without any memory issues
 
 
