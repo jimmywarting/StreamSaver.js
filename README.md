@@ -57,7 +57,24 @@ Syntax
 // If you know what the size is going to be then you can specify
 // that as 2nd arguments and it will use that as Content-Length header
 const writeStream = streamSaver.createWriteStream('filename.txt', size)
+
+// WriteStream is a whatwg standard writable stream
+// https://streams.spec.whatwg.org/
+// 
+// and the write fn only accepts uint8array
+writeStream.write(uint8array)
+
+// it's also possible to pipe another stream to the writeStream
+readableStream.pipeTo(writeStream)
+
+// when you are done: you close it
+writeStream.close()
 ```
+That is pretty much all StreamSaver.js dose :)
+
+
+Exampels
+======
 
 ### Writing some plain text
 
