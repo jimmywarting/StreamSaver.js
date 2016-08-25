@@ -22,7 +22,9 @@
 			<input name="kind" value="text" type="radio" checked>Plain text (Save as you type)</label><br>
 		<label><input name="kind" value="video" type="radio">Video stream</label><br>
 		<label><input name="kind" value="audio" type="radio">Audio stream</label><br>
+		<!-- <label><input name="kind" value="blob" type="radio">Pipe a blob: <code>new Blob(['aaaa bbb ccc']))</code></label><br> -->
 		<!-- disabled until now, haven't had the time to write any demo using fetch -->
+		<label><input name="kind" value="torrent" type="radio">Torrent</label><br>
 		<label><input name="kind" value="fetch" type="radio">Fetch stream</label>
 		 - kind of cheesy, since you can use fetchEvent to add
 		 Content-Disposition header (but requires service worker + ssl)<br>
@@ -43,8 +45,8 @@
 	<script src="StreamSaver.js"></script>
 	<script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
 	<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
-	<script src="https://wzrd.in/standalone/web-streams-polyfill@1.1.1"
-		integrity="sha384-8EYry4yokV53rGHMFtPqeVlAPgxn8yxr/RvxC4bZt3vlneaDPzWkSJCvBDBTuXAV"
+	<script src="https://cdn.rawgit.com/creatorrr/web-streams-polyfill/68f93d7240d925d27b175ce39133f57993c3f109/dist/polyfill.min.js"
+		Xintegrity="sha384-wC6EeO3kVv23JQA/XjoEHMvxOwXZXIRdxvhOt8rOcoGPYQnPbumUJugHHoJAdM0x"
 		crossorigin
 	></script>
 	<script>
@@ -72,6 +74,9 @@
 			permission,
 			url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4",
 			myFile = streamSaver.createWriteStream(filename)
+
+			if(kind !== 'blob')
+				myFile = myFile.getWriter()
 
 			$form.remove()
 			$close.hidden = false
@@ -111,7 +116,6 @@
 				break;
 				case "file":
 				case "blob":
-
 					var blob = new Blob([
 						"a".repeat(1024),
 						"b".repeat(1024),
@@ -138,19 +142,17 @@
 						// https://jakearchibald.com/2016/streams-ftw/
 						// The body is a stream :)
 						let reader = res.body.getReader()
-						let pump = () => {
-							return reader.read().then(({ value, done }) => {
-								if (done) {
-									myFile.close()
-									return
-								}
-								myFile.write(value)
-								return pump()
-							})
-						}
+						let pump = () => reader.read()
+							.then(res => res.done
+								? myFile.close()
+								: myFile.write(res.value).then(pump))
+
 						pump()
 					})
 				break; case "torrent":
+
+					$close.disabled = true
+					$close.innerText = 'getting meta info'
 
 					var client = new WebTorrent()
 					// Sintel, a free, Creative Commons movie
@@ -168,13 +170,14 @@
 
 						torrent.files.forEach(file => {
 							let myFile = streamSaver.createWriteStream(file.name, file.length)
+							let writer = myFile.getWriter()
 
 							file.createReadStream()
-								.on('data', data => myFile.write(data))
+								.on('data', data => writer.write(data))
 								.on('end', () => {
 									clearInterval(interval)
 									console.log("ended")
-									myFile.close()
+									writer.close()
 								})
 						})
 					})

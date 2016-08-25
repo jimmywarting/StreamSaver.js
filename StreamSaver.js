@@ -146,9 +146,8 @@
 					let
 					fr = new FileReader(),
 					start = currentChunk * highWaterMark,
-					end = start + highWaterMark >= blob.size
-						? blob.size
-						: start + highWaterMark
+					min = start + highWaterMark,
+					end = min >= blob.size ? blob.size : min
 
 					fr.onload = evt => {
 						let uint8array = new Uint8Array(evt.target.result)
