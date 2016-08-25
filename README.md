@@ -56,19 +56,19 @@ Syntax
 ```javascript
 // If you know what the size is going to be then you can specify
 // that as 2nd arguments and it will use that as Content-Length header
-const writeStream = streamSaver.createWriteStream('filename.txt', size)
-
+const fileStream = streamSaver.createWriteStream('filename.txt', size)
+const writeStream = fileStream.getWriter()
 // WriteStream is a whatwg standard writable stream
 // https://streams.spec.whatwg.org/
-// 
+//
 // and the write fn only accepts uint8array
 writeStream.write(uint8array)
-
-// it's also possible to pipe another stream to the writeStream
-readableStream.pipeTo(writeStream)
-
 // when you are done: you close it
 writeStream.close()
+
+// it's also possible to pipe a readableStream stream to the fileStream
+// but then you shouldn't call .getWriter() or .close()
+readableStream.pipeTo(fileStream)
 ```
 That is pretty much all StreamSaver.js dose :)
 
@@ -79,7 +79,8 @@ Exampels
 ### Writing some plain text
 
 ```javascript
-const writeStream = streamSaver.createWriteStream('filename.txt')
+const fileStream = streamSaver.createWriteStream('filename.txt')
+const writeStream = streamSaver.getWriter()
 const encoder = new TextEncoder
 let data = 'a'.repeat(1024)
 let uint8array = encoder.encode(data + "\n\n")
@@ -91,7 +92,8 @@ writeStream.close()
 ### Read blob as a stream and pipe it
 
 ```javascript
-const writeStream = streamSaver.createWriteStream('filename.txt')
+const fileStream = streamSaver.createWriteStream('filename.txt')
+const writeStream = streamSaver.getWriter()
 const blob = new Blob([ 'a'.repeat(1E9*5) ]) // 1*5 MB
 const blobStream = streamSaver.createBlobReader(blob)
 
@@ -106,7 +108,8 @@ get_user_media_stream_somehow().then(mediaStream => {
 	let fr = new FileReader
 	let mediaRecorder = new MediaRecorder(mediaStream)
 	let chunks = Promise.resolve()
-	let writeStream = streamSaver.createWriteStream('filename.mp4')
+	let fileStream = streamSaver.createWriteStream('filename.mp4')
+	let writeStream = streamSaver.getWriter()
 	// use .mp4 for video(camera & screen) and .wav for audio(microphone)
 
 	// Start recording
@@ -119,9 +122,7 @@ get_user_media_stream_somehow().then(mediaStream => {
 		, 1000)
 	}
 
-	mediaRecorder.ondataavailable = evt => {
-		let blob = evt.data
-
+	mediaRecorder.ondataavailable = ({blob}) => {
 		chunks = chunks.then(() => new Promise(resolve => {
 			fr.onload = () => {
 				writeStream.write(new Uint8Array(fr.result))
@@ -140,9 +141,10 @@ So we have to use the reader instead which is the underlying method in streams
 
 ```javascript
 fetch(url).then(res => {
-	const writeStream = streamSaver.createWriteStream('filename.txt')
+	const fileStream = streamSaver.createWriteStream('filename.txt')
+	const writeStream = streamSaver.getWriter()
 	// Later you will be able to just simply do
-	// res.body.pipeTo(writeStream)
+	// res.body.pipeTo(fileStream)
 
 	const reader = res.body.getReader()
 	const pump = () => reader.read()
@@ -173,7 +175,8 @@ client.add(torrentId, torrent => {
 	// Download the first file
 
 	const file = torrent.files[0]
-	const writeStream = streamSaver.createWriteStream(file.name, file.size)
+	let fileStream = streamSaver.createWriteStream(file.name, file.size)
+	let writeStream = streamSaver.getWriter()
 
 	// Unfortunately we have two different stream protocol so we can't pipe.
 	file.createReadStream()
