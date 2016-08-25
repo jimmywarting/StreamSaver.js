@@ -40,7 +40,7 @@ Getting started
 because the serviceWorker needs to respondWith a native version of the ReadableStream
 ```html
 <script src="StreamSaver.js"></script> <!-- load before streams polyfill to detect support -->
-<script src="https://wzrd.in/standalone/web-streams-polyfill@latest"></script>
+<script src="https://cdn.rawgit.com/creatorrr/web-streams-polyfill/master/dist/polyfill.min.js"></script>
 <script>
 	// it also support commonJs and amd
 	import { createWriteStream, supported, version } from 'StreamSaver'
