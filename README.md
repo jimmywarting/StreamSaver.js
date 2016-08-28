@@ -226,7 +226,6 @@ Consensus
 =========
 Go ahead and vote for how important this feature is
 
-- [Fetch][16] MS Edge status: Preview
 - [serviceWorker][17] MS Edge status: In Development
 - [streams][18] Firefox Status: ASSIGNED
 
