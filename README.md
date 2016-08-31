@@ -80,7 +80,7 @@ Exampels
 
 ```javascript
 const fileStream = streamSaver.createWriteStream('filename.txt')
-const writeStream = streamSaver.getWriter()
+const writeStream = fileStream.getWriter()
 const encoder = new TextEncoder
 let data = 'a'.repeat(1024)
 let uint8array = encoder.encode(data + "\n\n")
@@ -93,7 +93,7 @@ writeStream.close()
 
 ```javascript
 const fileStream = streamSaver.createWriteStream('filename.txt')
-const writeStream = streamSaver.getWriter()
+const writeStream = fileStream.getWriter()
 const blob = new Blob([ 'a'.repeat(1E9*5) ]) // 1*5 MB
 const blobStream = streamSaver.createBlobReader(blob)
 
@@ -109,7 +109,7 @@ get_user_media_stream_somehow().then(mediaStream => {
 	let mediaRecorder = new MediaRecorder(mediaStream)
 	let chunks = Promise.resolve()
 	let fileStream = streamSaver.createWriteStream('filename.mp4')
-	let writeStream = streamSaver.getWriter()
+	let writeStream = fileStream.getWriter()
 	// use .mp4 for video(camera & screen) and .wav for audio(microphone)
 
 	// Start recording
@@ -142,7 +142,7 @@ So we have to use the reader instead which is the underlying method in streams
 ```javascript
 fetch(url).then(res => {
 	const fileStream = streamSaver.createWriteStream('filename.txt')
-	const writeStream = streamSaver.getWriter()
+	const writeStream = fileStream.getWriter()
 	// Later you will be able to just simply do
 	// res.body.pipeTo(fileStream)
 
