@@ -57,14 +57,14 @@ Syntax
 // If you know what the size is going to be then you can specify
 // that as 2nd arguments and it will use that as Content-Length header
 const fileStream = streamSaver.createWriteStream('filename.txt', size)
-const writeStream = fileStream.getWriter()
+const writter = fileStream.getWriter()
 // WriteStream is a whatwg standard writable stream
 // https://streams.spec.whatwg.org/
 //
 // and the write fn only accepts uint8array
-writeStream.write(uint8array)
+writter.write(uint8array)
 // when you are done: you close it
-writeStream.close()
+writter.close()
 
 // it's also possible to pipe a readableStream stream to the fileStream
 // but then you shouldn't call .getWriter() or .close()
@@ -80,24 +80,23 @@ Exampels
 
 ```javascript
 const fileStream = streamSaver.createWriteStream('filename.txt')
-const writeStream = fileStream.getWriter()
+const writter = fileStream.getWriter()
 const encoder = new TextEncoder
 let data = 'a'.repeat(1024)
 let uint8array = encoder.encode(data + "\n\n")
 
-writeStream.write(uint8array)
-writeStream.close()
+writter.write(uint8array)
+writter.close()
 ```
 
 ### Read blob as a stream and pipe it
 
 ```javascript
 const fileStream = streamSaver.createWriteStream('filename.txt')
-const writeStream = fileStream.getWriter()
 const blob = new Blob([ 'a'.repeat(1E9*5) ]) // 1*5 MB
 const blobStream = streamSaver.createBlobReader(blob)
 
-blobStream.pipeTo(writeStream)
+blobStream.pipeTo(fileStream)
 ```
 
 ### Save a media stream
@@ -109,7 +108,7 @@ get_user_media_stream_somehow().then(mediaStream => {
 	let mediaRecorder = new MediaRecorder(mediaStream)
 	let chunks = Promise.resolve()
 	let fileStream = streamSaver.createWriteStream('filename.mp4')
-	let writeStream = fileStream.getWriter()
+	let writter = fileStream.getWriter()
 	// use .mp4 for video(camera & screen) and .wav for audio(microphone)
 
 	// Start recording
@@ -118,14 +117,14 @@ get_user_media_stream_somehow().then(mediaStream => {
 	closeBtn.onclick = event => {
 		mediaRecorder.stop()
 		setTimeout(() =>
-			chunks.then(evt => writeStream.close())
+			chunks.then(evt => writter.close())
 		, 1000)
 	}
 
 	mediaRecorder.ondataavailable = ({blob}) => {
 		chunks = chunks.then(() => new Promise(resolve => {
 			fr.onload = () => {
-				writeStream.write(new Uint8Array(fr.result))
+				writter.write(new Uint8Array(fr.result))
 				resolve()
 			}
 			fr.readAsArrayBuffer(blob)
@@ -142,7 +141,7 @@ So we have to use the reader instead which is the underlying method in streams
 ```javascript
 fetch(url).then(res => {
 	const fileStream = streamSaver.createWriteStream('filename.txt')
-	const writeStream = fileStream.getWriter()
+	const writter = fileStream.getWriter()
 	// Later you will be able to just simply do
 	// res.body.pipeTo(fileStream)
 
@@ -150,9 +149,9 @@ fetch(url).then(res => {
 	const pump = () => reader.read()
 		.then(({ value, done }) => done
 			// close the stream so we stop writing
-			? writeStream.close()
+			? writter.close()
 			// Write one chunk, then get the next one
-			: writeStream.write(value).then(pump)
+			: writter.write(value).then(pump)
 		)
 
 	// Start the reader
