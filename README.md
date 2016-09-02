@@ -175,12 +175,12 @@ client.add(torrentId, torrent => {
 
 	const file = torrent.files[0]
 	let fileStream = streamSaver.createWriteStream(file.name, file.size)
-	let writter = streamSaver.getWriter()
+	let writer = fileStream.getWriter()
 
 	// Unfortunately we have two different stream protocol so we can't pipe.
 	file.createReadStream()
-		.on('data', data => writter.write(data))
-		.on('end', () => writter.close())
+		.on('data', data => writer.write(data))
+		.on('end', () => writer.close())
 })
 ```
 
