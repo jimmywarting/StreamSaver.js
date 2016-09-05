@@ -58,7 +58,7 @@ function hijacke(uniqLink, stream, data, port){
 
 	headers = {
 		'Content-Type': 'application/octet-stream; charset=utf-8',
-		'Content-Disposition': 'attachment; filename=' + (filename || data.filename)
+		'Content-Disposition': 'attachment; filename="' + (filename || data.filename) + '"'
 	}
 
 	if(data.size)
