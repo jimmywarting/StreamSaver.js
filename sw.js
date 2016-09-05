@@ -53,12 +53,16 @@ function createStream(resolve, reject, port){
 function hijacke(uniqLink, stream, data, port){
 	let listener, filename, headers
 
-	if(typeof data === 'string')
-		filename = data
+	filename = typeof data === 'string' ? data : data.filename
+
+	// Make it RFC5987 compatible
+	filename = encodeURIComponent(filename)
+		.replace(/['()]/g, escape)
+		.replace(/\*/g, '%2A')
 
 	headers = {
 		'Content-Type': 'application/octet-stream; charset=utf-8',
-		'Content-Disposition': 'attachment; filename=' + (filename || data.filename)
+		'Content-Disposition': "attachment; filename*=UTF-8''" + filename
 	}
 
 	if(data.size)
