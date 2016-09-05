@@ -45,6 +45,7 @@
 	<script src="StreamSaver.js"></script>
 	<script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
 	<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
+	<script src="https://cdn.rawgit.com/eligrey/FileSaver.js/master/FileSaver.min.js"></script>
 	<script src="https://cdn.rawgit.com/creatorrr/web-streams-polyfill/68f93d7240d925d27b175ce39133f57993c3f109/dist/polyfill.min.js"
 		integrity="sha384-wC6EeO3kVv23JQA/XjoEHMvxOwXZXIRdxvhOt8rOcoGPYQnPbumUJugHHoJAdM0x"
 		crossorigin
@@ -95,16 +96,17 @@
 
 					$ipsum.onclick = event => {
 						let text = encoder.encode((Lorem + "\n\n").repeat(2*1024)) // 1 MiB
-						let n = ~~prompt("How many MiB of lorem ipsum text do you want?", '1024')
-						// n *= 1024
-						let que = Promise.resolve()
-						let pump = () => {
-							n-- && que.then(() => {
-								myFile.write(text).then(()=>{setTimeout(pump)})
-								// myFile.write(text).then(()=>pump()) // This should be possible
-							})
-						}
-						pump()
+						let res = prompt('How many MiB of lorem ipsum text do you want?\nWarning: Will evil()', '512 * 2 // 1 GiB')
+
+						let n = eval(res)
+						// Oh I'm so evil :P
+						// You only have yourself to blame!
+						// Nothing here that can be exposed... So
+
+						let pump = () => n-- && myFile.write(text).then(pump)
+						console.time('lorem ipsum')
+						pump().then(() => console.timeEnd('lorem ipsum'))
+
 					}
 
 				break; case "video":
