@@ -119,7 +119,7 @@
 				console.log('All data successfully read!')
 			},
 			abort(e) {
-				console.error('Something went wrong!', e)
+				channel.port1.postMessage('abort')
 			}
 		}, queuingStrategy)
 	}

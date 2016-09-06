@@ -31,14 +31,21 @@ function createStream(resolve, reject, port){
 		start(controller) {
 			port.postMessage({debug: 'ReadableStream has been created'})
 			// When we recive data on the messageChannel, we write
-			port.onmessage = event => {
+			port.onmessage = ({data}) => {
 				// We finaly have a abortable stream =D
-				if(event.data === 'end'){
+				if (data === 'end') {
                     resolve()
                     return controller.close()
                 }
-                controller.enqueue(event.data)
-                bytesWritten += event.data.byteLength
+
+				if (data === 'abort') {
+					resolve()
+					controller.error('Aborted the download')
+					return
+                }
+
+				controller.enqueue(data)
+                bytesWritten += data.byteLength
                 port.postMessage({ bytesWritten })
 			}
 		},
