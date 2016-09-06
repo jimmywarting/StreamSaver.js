@@ -90,17 +90,12 @@
 		})
 
 		return new WritableStream({
-			// TODO: What is the benefit of doing this:
-			// type: 'bytes',
 			start(error) {
 				// is called immediately, and should perform any actions
 				// necessary to acquire access to the underlying sink.
 				// If this process is asynchronous, it can return a promise
 				// to signal success or failure.
 				return setupChannel()
-
-				// TODO: Can service worker tell us when it was aborted?
-				// if so then we need to listen for such event from the sw
 			},
 			write(chunk) {
 				// is called when a new chunk of data is ready to be written
@@ -119,7 +114,7 @@
 				console.log('All data successfully read!')
 			},
 			abort(e) {
-				console.error('Something went wrong!', e)
+				channel.port1.postMessage('abort')
 			}
 		}, queuingStrategy)
 	}
@@ -129,33 +124,33 @@
 		// Could just do: stream = (new Response(blob)).body
 		// but it's not fully developt yet
 		// Any ides how to upgrade a `Reader` to a full ReadableByteStream?
-
-		let
-		highWaterMark = 524288,
-		chunks = Math.ceil(blob.size / highWaterMark),
-		currentChunk = 0
+		const DEFAULT_CHUNK_SIZE = 524288
+		let position = 0
 
 		return new ReadableStream({
 			type: 'bytes',
+			autoAllocateChunkSize: DEFAULT_CHUNK_SIZE,
+
 			pull(controller) {
-				if(currentChunk == chunks)
-					return controller.close()
+				const v = controller.byobRequest.view;
 
 				return new Promise((resolve, reject) => {
-
-					let
-					fr = new FileReader(),
-					start = currentChunk * highWaterMark,
-					min = start + highWaterMark,
-					end = min >= blob.size ? blob.size : min
-
+					let fr = new FileReader()
 					fr.onload = evt => {
-						let uint8array = new Uint8Array(evt.target.result)
-						controller.enqueue(uint8array)
+						let uint8array = new Uint8Array(fr.result)
+						let bytesRead = uint8array.byteLength
+
+						position += bytesRead
+						v.set(uint8array)
+						controller.byobRequest.respond(bytesRead)
+
+						if(position >= blob.size)
+							controller.close()
+
 						resolve()
 					}
-					fr.readAsArrayBuffer(blob.slice(start, end))
-					currentChunk++
+
+					fr.readAsArrayBuffer(blob.slice(position, position + v.byteLength))
 				})
 			}
 		}, queuingStrategy)
