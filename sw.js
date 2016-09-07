@@ -1,14 +1,21 @@
 'use strict'
+const map = new Map
 
 // This should be called once per download
 // Each event has a dataChannel that the data will be piped throught
 self.onmessage = event => {
     // Create a uniq link for the download
-    let uniqLink = 'intercept-me-nr' + Math.random()
+    let uniqLink = self.registration.scope + 'intercept-me-nr' + Math.random()
+	let port = event.ports[0]
 
     let p = new Promise((resolve, reject) => {
-        let stream = createStream(resolve, reject, event.ports[0])
-        hijacke(uniqLink, stream, event.data, event.ports[0])
+        let stream = createStream(resolve, reject, port)
+		map.set(uniqLink, [stream, event.data])
+		port.postMessage({download: uniqLink})
+
+		// Mistage adding this and have streamsaver.js relly on it
+		// depricated as from 0.2.1
+		port.postMessage({debug: 'Mocking a download request'})
     })
 
     // Beginning in Chrome 51, event is an ExtendableMessageEvent, which supports
@@ -24,15 +31,12 @@ self.onmessage = event => {
 }
 
 function createStream(resolve, reject, port){
-    // ReadableStream is only supported by chrome 52, but can be enabled
-    // with a flag chrome://flags/#enable-experimental-web-platform-features
+    // ReadableStream is only supported by chrome 52
     var bytesWritten = 0
     return new ReadableStream({
 		start(controller) {
-			port.postMessage({debug: 'ReadableStream has been created'})
 			// When we recive data on the messageChannel, we write
 			port.onmessage = ({data}) => {
-				// We finaly have a abortable stream =D
 				if (data === 'end') {
                     resolve()
                     return controller.close()
@@ -56,13 +60,22 @@ function createStream(resolve, reject, port){
 }
 
 
-
-function hijacke(uniqLink, stream, data, port){
+self.onfetch = event => {
+	let url = event.request.url
+	let hijacke = map.get(url)
 	let listener, filename, headers
+
+	console.log("Handleing ", url)
+
+	if(!hijacke) return null
+
+	let [stream, data] = hijacke
+
+	map.delete(url)
 
 	filename = typeof data === 'string' ? data : data.filename
 
-	// Make it RFC5987 compatible
+	// Make filename RFC5987 compatible
 	filename = encodeURIComponent(filename)
 		.replace(/['()]/g, escape)
 		.replace(/\*/g, '%2A')
@@ -72,22 +85,7 @@ function hijacke(uniqLink, stream, data, port){
 		'Content-Disposition': "attachment; filename*=UTF-8''" + filename
 	}
 
-	if(data.size)
-		headers['Content-Length'] = data.size
+	if(data.size) headers['Content-Length'] = data.size
 
-    self.addEventListener('fetch', listener = event => {
-		console.log("Handleing ", event.request.url)
-        if(!event.request.url.includes(uniqLink))
-    		return
-
-        port.postMessage({debug: 'Mocking a download request'})
-
-        self.removeEventListener('fetch', listener)
-
-    	let res = new Response(stream, { headers })
-
-    	event.respondWith(res)
-    })
-
-	port.postMessage({download: self.registration.scope + uniqLink})
+	event.respondWith(new Response(stream, { headers }))
 }

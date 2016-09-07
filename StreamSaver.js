@@ -13,8 +13,8 @@
 		createBlobReader,
 		supported: false,
 		version: {
-			full: '0.2.0',
-			major: 0, minor: 2, dot: 0
+			full: '0.2.1',
+			major: 0, minor: 2, dot: 1
 		}
 	},
 	proxy = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
@@ -38,11 +38,8 @@
 		popup,
 		setupChannel = () => new Promise((resolve, reject) => {
 			channel.port1.onmessage = evt => {
-				evt.data.debug &&
-				evt.data.debug === 'Mocking a download request' &&
-				resolve()
-
 				if(evt.data.download) {
+					resolve()
 					if(!secure) popup.close() // don't need the popup any longer
 					let link = document.createElement('a')
 					let click = new MouseEvent('click')
