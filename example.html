@@ -41,14 +41,18 @@
 		<button id="$c">Write some ccc's</button>
 		<button id="$ipsum">Write a lot of Lorem ipsum</button>
 	</div>
-	<button id="$close" hidden>close stream</button>
+	<button id="$close" hidden title="When you are done writing">Close</button>
+	<button id="$abort" hidden title="When you want to abort">Abort</button>
 	<script src="StreamSaver.js"></script>
 	<script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
 	<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
+
+	<!-- 1.2.2 -->
 	<script src="https://cdn.rawgit.com/creatorrr/web-streams-polyfill/68f93d7240d925d27b175ce39133f57993c3f109/dist/polyfill.min.js"
 		integrity="sha384-wC6EeO3kVv23JQA/XjoEHMvxOwXZXIRdxvhOt8rOcoGPYQnPbumUJugHHoJAdM0x"
-		crossorigin
-	></script>
+		crossorigin="anonymous">
+	</script>
+
 	<script>
 		!streamSaver.supported && prompt(
 			'ReadableStream is not supported, you can enable it in chrome, or wait until v52',
@@ -72,15 +76,21 @@
 			kind = $form.querySelector(':checked').value,
 			filename = $form.$filename.value,
 			permission,
+			writer,
 			url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4",
-			myFile = streamSaver.createWriteStream(filename)
+			fileStream = streamSaver.createWriteStream(filename)
 
-			if(kind !== 'blob')
-				myFile = myFile.getWriter()
+			if(kind == 'blob') {
+				$abort.onclick = event => fileStream.abort()
+			} else {
+				writer = fileStream.getWriter()
+				$abort.onclick = event => writer.abort()
+				$close.onclick = event => writer.close()
+			}
 
 			$form.remove()
+			$abort.hidden = false
 			$close.hidden = false
-			$close.onclick = event => myFile.close()
 
 			switch (kind) {
 				case "text":
@@ -90,7 +100,7 @@
 					$a.onclick = $b.onclick = $c.onclick = event => {
 						let data = event.target.id[1].repeat(1024)
 						let uint8array = encoder.encode(data + "\n\n")
-						myFile.write(uint8array)
+						writer.write(uint8array)
 					}
 
 					$ipsum.onclick = event => {
@@ -100,8 +110,7 @@
 						let que = Promise.resolve()
 						let pump = () => {
 							n-- && que.then(() => {
-								myFile.write(text).then(()=>{setTimeout(pump)})
-								// myFile.write(text).then(()=>pump()) // This should be possible
+								writer.write(text).then(()=>{setTimeout(pump)})
 							})
 						}
 						pump()
