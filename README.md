@@ -60,11 +60,13 @@ const fileStream = streamSaver.createWriteStream('filename.txt', size)
 const writer = fileStream.getWriter()
 // WriteStream is a whatwg standard writable stream
 // https://streams.spec.whatwg.org/
-//
+
 // and the write fn only accepts uint8array
 writer.write(uint8array)
 // when you are done: you close it
 writer.close()
+// when you want to cancel the download: you abort
+writer.abort(reason) // ATM Canary only recognize if the stream has been errored
 
 // it's also possible to pipe a readableStream stream to the fileStream
 // but then you shouldn't call .getWriter() or .close()
