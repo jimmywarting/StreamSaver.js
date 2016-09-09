@@ -167,15 +167,31 @@
 					// Sintel, a free, Creative Commons movie
 					var torrentId = 'magnet:?xt=urn:btih:6a9759bffd5c0af65319979fb7832189f4f3c35d&dn=sintel.mp4&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.webtorrent.io&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel-1024-surround.mp4'
 
-					client.add(torrentId, function (torrent) {
+					function size(bytes, precision) {
+						if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
+						if (typeof precision === 'undefined') precision = 1;
+						var units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'],
+						number = Math.floor(Math.log(bytes) / Math.log(1024));
+						return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
+					}
 
+					client.add(torrentId, function (torrent) {
+						$close.remove()
 						var meter = document.createElement('meter')
 						document.body.appendChild(meter)
+						var speed = document.createElement('p')
+						document.body.appendChild(speed)
+						var downloaded = document.createElement('p')
+						document.body.appendChild(downloaded)
+						var timeLeft = document.createElement('p')
+						document.body.appendChild(timeLeft)
 
-						// Print out progress every 5 seconds
-						var interval = setInterval(() => {
+						torrent.on('download', function (bytes) {
+							downloaded.innerText =  `total downloaded: ${size(torrent.downloaded)} of ${size(torrent.length)}`
+							speed.innerText = 'download speed: ' + size(torrent.downloadSpeed)
+							timeLeft.innerText = 'Time Left: ' + (torrent.timeRemaining / 1000).toFixed(0) + ' sec'
 							meter.value = torrent.progress
-						}, 200)
+						})
 
 						torrent.files.forEach(file => {
 							let myFile = streamSaver.createWriteStream(file.name, file.length)
@@ -183,11 +199,7 @@
 
 							file.createReadStream()
 								.on('data', data => writer.write(data))
-								.on('end', () => {
-									clearInterval(interval)
-									console.log("ended")
-									writer.close()
-								})
+								.on('end', () => writer.close())
 						})
 					})
 
