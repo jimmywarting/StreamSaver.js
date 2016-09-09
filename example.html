@@ -22,8 +22,6 @@
 			<input name="kind" value="text" type="radio" checked>Plain text (Save as you type)</label><br>
 		<label><input name="kind" value="video" type="radio">Video stream</label><br>
 		<label><input name="kind" value="audio" type="radio">Audio stream</label><br>
-		<!-- <label><input name="kind" value="blob" type="radio">Pipe a blob: <code>new Blob(['aaaa bbb ccc']))</code></label><br> -->
-		<!-- disabled until now, haven't had the time to write any demo using fetch -->
 		<label><input name="kind" value="torrent" type="radio">Torrent</label><br>
 		<label><input name="kind" value="fetch" type="radio">Fetch stream</label>
 		 - kind of cheesy, since you can use fetchEvent to add
@@ -45,6 +43,7 @@
 	<button id="$abort" hidden title="When you want to abort">Abort</button>
 	<script src="StreamSaver.js"></script>
 	<script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
+	<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
 	<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
 
 	<!-- 1.2.2 -->
@@ -80,13 +79,9 @@
 			url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4",
 			fileStream = streamSaver.createWriteStream(filename)
 
-			if(kind == 'blob') {
-				$abort.onclick = event => fileStream.abort()
-			} else {
-				writer = fileStream.getWriter()
-				$abort.onclick = event => writer.abort()
-				$close.onclick = event => writer.close()
-			}
+			writer = fileStream.getWriter()
+			$abort.onclick = event => writer.abort()
+			$close.onclick = event => writer.close()
 
 			$form.remove()
 			$abort.hidden = false
@@ -123,27 +118,6 @@
 				break; case "screen":
 					permission = {name: 'screen'}
 				break;
-				case "file":
-				case "blob":
-					var blob = new Blob([
-						"a".repeat(1024),
-						"b".repeat(1024),
-						"c".repeat(1024)
-					])
-
-					let stream = streamSaver.createBlobReader(blob)
-					return stream.pipeTo(myFile)
-
-					// This is rather quite simple with fetch
-					// cuz you can retrive an actual stream with it
-					// Create a object url that you can request
-					// then just fall into next "fetch case"
-					url = URL.createObjectURL(blobOrFile)
-
-					// Alternetive method to get a blob to become a reader:
-					// stream = (new Response(blob)).body
-					// reader = stream.getReader()
-
 				case "fetch":
 					// Here we could just simply open the link and then let
 					// the SW add Content-Disposition header to that request.

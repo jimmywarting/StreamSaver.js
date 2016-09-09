@@ -10,15 +10,15 @@
 	secure = location.protocol == 'https:' || location.hostname == 'localhost',
 	streamSaver = {
 		createWriteStream,
-		createBlobReader,
 		supported: false,
 		version: {
-			full: '0.2.1',
-			major: 0, minor: 2, dot: 1
+			full: '1.0.0',
+			major: 1, minor: 0, dot: 0
 		}
-	},
-	proxy = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
-	         streamSaver.version.full
+	}
+
+	streamSaver.mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
+		streamSaver.version.full
 
 	try {
 		// Some browser has it but ain't allowed to construct a stream yet
@@ -51,7 +51,7 @@
 
 			if(secure && !iframe) {
 				iframe = document.createElement('iframe')
-				iframe.src = proxy
+				iframe.src = streamSaver.mitm
 				iframe.hidden = true
 				document.body.appendChild(iframe)
 			}
@@ -71,7 +71,7 @@
 			}
 
 			if(!secure) {
-				popup = window.open(proxy, Math.random())
+				popup = window.open(streamSaver.mitm, Math.random())
 				let onready = evt => {
 					if(evt.source === popup){
 						popup.postMessage({filename, size}, '*', [channel.port2])
@@ -116,43 +116,5 @@
 		}, queuingStrategy)
 	}
 
-	// May want to have this as a seperate module...
-	function createBlobReader(blob, queuingStrategy){
-		// Could just do: stream = (new Response(blob)).body
-		// but it's not fully developt yet
-		// Any ides how to upgrade a `Reader` to a full ReadableByteStream?
-		const DEFAULT_CHUNK_SIZE = 524288
-		let position = 0
-
-		return new ReadableStream({
-			type: 'bytes',
-			autoAllocateChunkSize: DEFAULT_CHUNK_SIZE,
-
-			pull(controller) {
-				const v = controller.byobRequest.view;
-
-				return new Promise((resolve, reject) => {
-					let fr = new FileReader()
-					fr.onload = evt => {
-						let uint8array = new Uint8Array(fr.result)
-						let bytesRead = uint8array.byteLength
-
-						position += bytesRead
-						v.set(uint8array)
-						controller.byobRequest.respond(bytesRead)
-
-						if(position >= blob.size)
-							controller.close()
-
-						resolve()
-					}
-
-					fr.readAsArrayBuffer(blob.slice(position, position + v.byteLength))
-				})
-			}
-		}, queuingStrategy)
-	}
-
 	return streamSaver
-
-});
+})

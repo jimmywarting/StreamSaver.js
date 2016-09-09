@@ -91,14 +91,14 @@ writer.write(uint8array)
 writer.close()
 ```
 
-### Read blob as a stream and pipe it
+### Read blob as a stream and pipe it (see: [Screw FileReader](https://www.npmjs.com/package/screw-filereader))
 
 ```javascript
+require('screw-filereader')
 const fileStream = streamSaver.createWriteStream('filename.txt')
 const blob = new Blob([ 'a'.repeat(1E9*5) ]) // 1*5 MB
-const blobStream = streamSaver.createBlobReader(blob)
 
-blobStream.pipeTo(fileStream)
+blob.stream().pipeTo(fileStream)
 ```
 
 ### Save a media stream
