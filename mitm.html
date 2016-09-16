@@ -23,11 +23,6 @@ if (window.location.host == host && window.location.protocol != "https:")
 window.onmessage = event => {
 	let {data, ports} = event
 
-	// It's important to have a messageChannel, don't want to interfair
-	// with other simultainus downloads
-    if(!ports || !ports.length)
-        throw new TypeError("Mehhh! You didn't send a messageChannel")
-
     // Register the worker, then forward the dataChannel to the worker
     // So they can talk directly, so we don't have to be "the middle man" any
     // longer

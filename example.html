@@ -58,6 +58,8 @@
 			'chrome://flags/#enable-experimental-web-platform-features'
 		)
 
+		streamSaver.mitm = 'mitm.html'
+
 		var Lorem = `Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 		Pellentesque gravida condimentum metus et porttitor. Curabitur
 		pharetra vestibulum egestas. Pellentesque quis tortor id ligula
@@ -77,7 +79,9 @@
 			permission,
 			writer,
 			url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4",
-			fileStream = streamSaver.createWriteStream(filename)
+			fileStream = streamSaver.createWriteStream(filename, {
+				link: 'dl/sample.txt?fallback=https://github.com/w3c/ServiceWorker/issues/757'
+			})
 
 			writer = fileStream.getWriter()
 			$abort.onclick = event => writer.abort()
@@ -102,13 +106,17 @@
 						let text = encoder.encode((Lorem + "\n\n").repeat(2*1024)) // 1 MiB
 						let n = ~~prompt("How many MiB of lorem ipsum text do you want?", '1024')
 						// n *= 1024
-						let que = Promise.resolve()
+						console.time('pump')
 						let pump = () => {
-							n-- && que.then(() => {
-								writer.write(text).then(()=>{setTimeout(pump)})
+							return n-- && writer.ready.then(()=>{
+								writer.write(text)
+								return pump()
 							})
 						}
-						pump()
+
+						pump().then(() => {
+							console.timeEnd('pump')
+						})
 					}
 
 				break; case "video":

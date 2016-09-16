@@ -1,13 +1,11 @@
-;((name, definition) => {
-	'undefined' != typeof module ? module.exports = definition() :
-	'function' == typeof define && 'object' == typeof define.amd ? define(definition) :
-	this[name] = definition()
+;((name, definition, global) => {
+	typeof module != 'undefined' ? module.exports = definition() :
+	typeof define == 'function' && 'object' == typeof define.amd
+	? define(definition) : global[name] = definition()
 })('streamSaver', () => {
 	'use strict'
 
 	let
-	iframe, loaded,
-	secure = location.protocol == 'https:' || location.hostname == 'localhost',
 	streamSaver = {
 		createWriteStream,
 		supported: false,
@@ -17,82 +15,104 @@
 		}
 	}
 
-	streamSaver.mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
-		streamSaver.version.full
+	streamSaver.mitm = 'https://jimmywarting.github.io/StreamSaver.js/'
+		+ streamSaver.version.full + '/mitm.html'
 
 	try {
 		// Some browser has it but ain't allowed to construct a stream yet
 		streamSaver.supported = !!new ReadableStream()
-	} catch(err) {
-		// if you are running chrome < 52 then you can enable it
-		// `chrome://flags/#enable-experimental-web-platform-features`
+	} catch(err){}
+
+	function setupChannel() {
+		let iframe, popup,
+			channel = new MessageChannel,
+			secure = location.protocol == 'https:' || location.hostname == 'localhost',
+			msg = {action: 'StreamSaver::Establish Connection'}
+
+		// channel have been establish
+		channel.port1.onmessage = evt => secure
+			? iframe.remove()
+			: popup.close()
+
+		if(secure) {
+			iframe = document.createElement('iframe')
+			iframe.src = streamSaver.mitm
+			iframe.hidden = true
+			iframe.onload = event => {
+				iframe.contentWindow.postMessage(msg, '*', [channel.port2])
+			}
+			document.body.appendChild(iframe)
+		} else {
+			let popup = window.open(streamSaver.mitm, Math.random())
+
+			// Another problem that cross origin don't allow is scripting
+			// so popup.onload() don't work but postMessage still dose
+			// work cross origin
+			addEventListener('message', function onmessage(event) {
+				if(evt.source === popup){
+					popup.postMessage(msg, '*', [channel.port2])
+					removeEventListener('message', onmessage)
+				}
+			})
+		}
+
+		setupChannel = () => channel
+		return channel
 	}
 
-	function createWriteStream(filename, queuingStrategy, size) {
+	function createWriteStream(filename, opts = {}) {
+		let streamChannel = new MessageChannel
+		let unload
+		let writes = []
+		let {
+			size,
+			// queuing = new ByteLengthQueuingStrategy({ highWaterMark: 32 * 1024 }),
+			queuing = new CountQueuingStrategy({ highWaterMark: 10 }),
+			href = 'dl/' + filename
+		} = opts
 
-		// normalize arguments
-		if (Number.isFinite(queuingStrategy))
-			[size, queuingStrategy] = [queuingStrategy, size]
-
-		let channel = new MessageChannel,
-		popup,
-		setupChannel = () => new Promise((resolve, reject) => {
-			channel.port1.onmessage = evt => {
-				if(evt.data.download) {
-					resolve()
-					if(!secure) popup.close() // don't need the popup any longer
-					let link = document.createElement('a')
-					let click = new MouseEvent('click')
-
-					link.href = evt.data.download
-					link.dispatchEvent(click)
-				}
-			}
-
-			if(secure && !iframe) {
-				iframe = document.createElement('iframe')
-				iframe.src = streamSaver.mitm
-				iframe.hidden = true
-				document.body.appendChild(iframe)
-			}
-
-			if(secure && !loaded) {
-				let fn;
-				iframe.addEventListener('load', fn = evt => {
-					loaded = true
-					iframe.removeEventListener('load', fn)
-					iframe.contentWindow.postMessage(
-						{filename, size}, '*', [channel.port2])
-				})
-			}
-
-			if(secure && loaded) {
-				iframe.contentWindow.postMessage({filename, size}, '*', [channel.port2])
-			}
-
-			if(!secure) {
-				popup = window.open(streamSaver.mitm, Math.random())
-				let onready = evt => {
-					if(evt.source === popup){
-						popup.postMessage({filename, size}, '*', [channel.port2])
-						removeEventListener('message', onready)
-					}
-				}
-
-				// Another problem that cross origin don't allow is scripting
-				// so popup.onload() don't work but postMessage still dose
-				// work cross origin
-				addEventListener('message', onready)
-			}
-		})
 
 		return new WritableStream({
-			start(error) {
-				// is called immediately, and should perform any actions
-				// necessary to acquire access to the underlying sink.
-				// If this process is asynchronous, it can return a promise
-				// to signal success or failure.
-				return setupChannel()
+			// is called immediately, and should perform any actions
+			// necessary to acquire access to the underlying sink.
+			// If this process is asynchronous, it can return a promise
+			// to signal success or failure.
+			start(controller) {
+
+				// Can't continue the download if the page is closed
+				// So we send a message to
+				window.addEventListener('unload', unload = () =>
+					streamChannel.port1.postMessage('abort')
+				)
+
+				let channel = setupChannel()
+				channel.port1.postMessage(
+					{href, size, filename, action: 'Add link'},
+				 	[streamChannel.port2]
+				)
+
+				streamChannel.port1.onmessage = event => {
+					// first event is going to be a empty pull, meaning that
+					// it's ready to read, So it's time to open up the link
+					let a = document.createElement('a')
+					let click = new MouseEvent('click')
+					a.href = href
+					a.dispatchEvent(click)
+
+					streamChannel.port1.onmessage = ({data}) => {
+						// Only time we get a message from SW is
+						// - on pull (message includes bytesWritten as Intenger)
+						// - on error (message is a string, user abort the download)
+						if(typeof data == 'string')
+							controller.error(new Error(data))
+						else {
+							// bytesWritten = data
+							writes.shift()()
+						}
+						// console.log(controller._queue)
+						// console.log(controller._strategyHWM)
+					}
+				}
 			},
 			write(chunk) {
 				// is called when a new chunk of data is ready to be written
@@ -104,17 +124,20 @@
 
 				// TODO: Kind of important that service worker respond back when
 				// it has been written. Otherwice we can't handle backpressure
-				channel.port1.postMessage(chunk)
+				return new Promise(resolve => {
+					writes.push(resolve)
+					streamChannel.port1.postMessage(chunk)
+				})
 			},
 			close() {
-				channel.port1.postMessage('end')
-				console.log('All data successfully read!')
+				streamChannel.port1.postMessage('end')
+				window.removeEventListener('unload', unload)
 			},
 			abort(e) {
-				channel.port1.postMessage('abort')
+				streamChannel.port1.postMessage('abort')
 			}
-		}, queuingStrategy)
+		}, queuing)
 	}
 
 	return streamSaver
-})
+}, this)

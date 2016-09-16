@@ -1,91 +1,106 @@
-'use strict'
-const map = new Map
+;(()=>{
+	'use strict'
 
-// This should be called once per download
-// Each event has a dataChannel that the data will be piped throught
-self.onmessage = event => {
-    // Create a uniq link for the download
-    let uniqLink = self.registration.scope + 'intercept-me-nr' + Math.random()
-	let port = event.ports[0]
+	const map = new Map
 
-    let p = new Promise((resolve, reject) => {
-        let stream = createStream(resolve, reject, port)
-		map.set(uniqLink, [stream, event.data])
-		port.postMessage({download: uniqLink})
+	const scope = self.registration.scope
 
-		// Mistage adding this and have streamsaver.js relly on it
-		// depricated as from 0.2.1
-		port.postMessage({debug: 'Mocking a download request'})
-    })
+	const interceptLinks = event => {
+		const {url} = event.request
+		const hijacke = map.get(url)
+		let listener, filename, headers, data
 
-    // Beginning in Chrome 51, event is an ExtendableMessageEvent, which supports
-    // the waitUntil() method for extending the lifetime of the event handler
-    // until the promise is resolved.
-    if ('waitUntil' in event) {
-        event.waitUntil(p)
-    }
+		if(!hijacke) {
+			let fallback = new URL(url).searchParams.get('fallback')
+			if (fallback)
+				return event.respondWith(new Response('', {
+					status: 307,
+					headers: {
+						Location: fallback
+					}
+				}))
 
-    // Without support for waitUntil(), there's a chance that if the promise chain
-    // takes "too long" to execute, the service worker might be automatically
-    // stopped before it's complete.
-}
-
-function createStream(resolve, reject, port){
-    // ReadableStream is only supported by chrome 52
-    var bytesWritten = 0
-    return new ReadableStream({
-		start(controller) {
-			// When we recive data on the messageChannel, we write
-			port.onmessage = ({data}) => {
-				if (data === 'end') {
-                    resolve()
-                    return controller.close()
-                }
-
-				if (data === 'abort') {
-					resolve()
-					controller.error('Aborted the download')
-					return
-                }
-
-				controller.enqueue(data)
-                bytesWritten += data.byteLength
-                port.postMessage({ bytesWritten })
-			}
-		},
-		cancel() {
-			console.log("user aborted")
+			return null
 		}
-	})
-}
 
+		data = hijacke
 
-self.onfetch = event => {
-	let url = event.request.url
-	let hijacke = map.get(url)
-	let listener, filename, headers
+		// Url is a onetime download
+		map.delete(url)
 
-	console.log("Handleing ", url)
+		// Make filename RFC5987 compatible
+		filename = encodeURIComponent(data.filename)
+			.replace(/['()]/g, escape)
+			.replace(/\*/g, '%2A')
 
-	if(!hijacke) return null
+		headers = {
+			'Content-Type': 'application/octet-stream; charset=utf-8',
+			'Content-Disposition': "attachment; filename*=UTF-8''" + filename
+		}
 
-	let [stream, data] = hijacke
+		if(data.size) headers['Content-Length'] = data.size
 
-	map.delete(url)
+		// This would be the ideal thing!
+		// event.respondWith(event.request.stream(), { headers })
 
-	filename = typeof data === 'string' ? data : data.filename
-
-	// Make filename RFC5987 compatible
-	filename = encodeURIComponent(filename)
-		.replace(/['()]/g, escape)
-		.replace(/\*/g, '%2A')
-
-	headers = {
-		'Content-Type': 'application/octet-stream; charset=utf-8',
-		'Content-Disposition': "attachment; filename*=UTF-8''" + filename
+		event.respondWith(new Response(data.stream, { headers }))
 	}
 
-	if(data.size) headers['Content-Length'] = data.size
+	const onMessage = event => {
+		if (event.data.action == 'Add link') {
+			event.data.stream = createStream(event.ports[0])
+			map.set(scope + event.data.href, event.data)
+		}
+	}
 
-	event.respondWith(new Response(stream, { headers }))
-}
+	const establishConnection = event => {
+		var wanted = 'StreamSaver::Establish Connection'
+
+		if (event.data && event.data.action !== wanted) return
+
+		const channel = event.ports[0]
+		channel.onmessage = onMessage
+		channel.postMessage('StreamSaver::Connection Establish')
+	}
+
+	// ReadableStream is only supported by chrome 52 atm
+	const createStream = port => {
+		let pulls = []
+		let bytesWritten = 0
+
+		return new ReadableStream({
+			start(controller) {
+				// When we recive data on the messageChannel, we write
+				port.onmessage = ({data}) => {
+					if (data === 'close') {
+						resolve()
+						return controller.close()
+					}
+
+					if (data === 'abort') {
+						controller.error('Aborted the download')
+						return
+					}
+
+					let resolve = pulls.shift()
+					resolve()
+					controller.enqueue(data)
+					bytesWritten += data.byteLength
+				}
+			},
+			pull(controller) {
+				return new Promise(resolve => {
+					pulls.push(resolve)
+					port.postMessage(bytesWritten)
+				})
+			},
+			cancel(reason) {
+				console.warn(reason)
+				port.postMessage('abort')
+			}
+		}, new CountQueuingStrategy({ highWaterMark: 10 }))
+	}
+
+	self.addEventListener('fetch', interceptLinks)
+	self.addEventListener('message', establishConnection)
+})()

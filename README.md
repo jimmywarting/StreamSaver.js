@@ -1,6 +1,8 @@
 StreamSaver.js
 ==============
 
+[![npm version][npm-image]][npm-url]
+
 First I want to thank [Eli Grey][1] for a fantastic work implementing the
 [FileSaver.js][2] to save files & blobs so easily!
 But there is one obstacle - The RAM it can hold and the max blob size limitation
@@ -149,11 +151,17 @@ fetch(url).then(res => {
 
 	const reader = res.body.getReader()
 	const pump = () => reader.read()
-		.then(({ value, done }) => done
-			// close the stream so we stop writing
-			? writer.close()
-			// Write one chunk, then get the next one
-			: writer.write(value).then(pump)
+		.then(({ value, done }) => {
+			if (done) {
+				// close the stream so we stop writing
+				writer.close()
+			} else {
+				// Write one chunk, then get the next one
+				writer.write(value) // returns a promise
+
+				// while the stream can handle the watermark, read more
+				writer.ready.then(pump)
+			}
 		)
 
 	// Start the reader
@@ -249,3 +257,5 @@ Go ahead and vote for how important this feature is
 [17]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/serviceworker
 [18]: https://bugzilla.mozilla.org/show_bug.cgi?id=1128959
 [19]: https://webtorrent.io
+[npm-image]: https://img.shields.io/npm/v/streamsaver.svg?style=flat-square
+[npm-url]: https://www.npmjs.com/package/streamsaver
