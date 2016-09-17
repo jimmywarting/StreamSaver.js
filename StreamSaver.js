@@ -6,8 +6,10 @@
 	'use strict'
 
 	let
+	channel,
 	streamSaver = {
 		createWriteStream,
+		setupChannel,
 		supported: false,
 		version: {
 			full: '1.0.0',
@@ -24,10 +26,13 @@
 	} catch(err){}
 
 	function setupChannel() {
+		if(channel) return
+
 		let iframe, popup,
-			channel = new MessageChannel,
 			secure = location.protocol == 'https:' || location.hostname == 'localhost',
 			msg = {action: 'StreamSaver::Establish Connection'}
+
+		channel = new MessageChannel
 
 		// channel have been establish
 		channel.port1.onmessage = evt => secure
@@ -49,15 +54,12 @@
 			// so popup.onload() don't work but postMessage still dose
 			// work cross origin
 			addEventListener('message', function onmessage(event) {
-				if(evt.source === popup){
+				if (evt.source === popup) {
 					popup.postMessage(msg, '*', [channel.port2])
 					removeEventListener('message', onmessage)
 				}
 			})
 		}
-
-		setupChannel = () => channel
-		return channel
 	}
 
 	function createWriteStream(filename, opts = {}) {
@@ -85,7 +87,8 @@
 					streamChannel.port1.postMessage('abort')
 				)
 
-				let channel = setupChannel()
+				setupChannel()
+
 				channel.port1.postMessage(
 					{href, size, filename, action: 'Add link'},
 				 	[streamChannel.port2]

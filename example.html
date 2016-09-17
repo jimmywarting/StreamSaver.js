@@ -157,15 +157,19 @@
 						return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
 					}
 
+					// Pre setup messageChannel to avoid popup block in http
+					streamSaver.setupChannel()
+
 					client.add(torrentId, function (torrent) {
 						$close.remove()
 						var meter = document.createElement('meter')
-						document.body.appendChild(meter)
 						var speed = document.createElement('p')
-						document.body.appendChild(speed)
 						var downloaded = document.createElement('p')
-						document.body.appendChild(downloaded)
 						var timeLeft = document.createElement('p')
+
+						document.body.appendChild(meter)
+						document.body.appendChild(speed)
+						document.body.appendChild(downloaded)
 						document.body.appendChild(timeLeft)
 
 						torrent.on('download', function (bytes) {

@@ -76,9 +76,14 @@ readableStream.pipeTo(fileStream)
 ```
 That is pretty much all StreamSaver.js dose :)
 
+If your site is running on http then you will see a popup for a split sec
+if you are not calling createWriteStream on a user interaction like onclick
+then you need to call `streamSaver.setupChannel()` as soon as user interaction
+has happened (see webTorrent example)
+Otherwise the popup can be blocked for not being open on a user interaction evt
 
 Exampels
-======
+========
 
 ### Writing some plain text
 
@@ -176,22 +181,29 @@ fetch(url).then(res => {
 to use some kind of [Custom chunk store](https://webtorrent.io/docs#-client-add-torrentid-opts-function-ontorrent-torrent-) (must follow [abstract-chunk-store](https://www.npmjs.com/package/abstract-chunk-store) API)
 
 ```javascript
-const client = new WebTorrent()
-const torrentId = 'magnet:?xt=urn:btih:6a9759bffd5c0af65319979fb7832189f4f3c35d&dn=sintel.mp4&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.webtorrent.io&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel-1024-surround.mp4'
-// Sintel, a free, Creative Commons movie
+download.onclick = event => {
+	const client = new WebTorrent()
+	const torrentId = 'magnet:?xt=urn:btih:6a9759bffd5c0af65319979fb7832189f4f3c35d&dn=sintel.mp4&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.webtorrent.io&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel-1024-surround.mp4'
+	// Sintel, a free, Creative Commons movie
 
-client.add(torrentId, torrent => {
-	// Download the first file
+	// Pre setup a messageChannel with service worker to avoid
+	// popup being blocked in http. subsequence call to this fn will bail early
+	// so you can call this many times and see the popup only once
+	streamSaver.setupChannel()
 
-	const file = torrent.files[0]
-	let fileStream = streamSaver.createWriteStream(file.name, file.size)
-	let writer = fileStream.getWriter()
+	client.add(torrentId, torrent => {
+		// Download the first file
 
-	// Unfortunately we have two different stream protocol so we can't pipe.
-	file.createReadStream()
-		.on('data', data => writer.write(data))
-		.on('end', () => writer.close())
-})
+		const file = torrent.files[0]
+		let fileStream = streamSaver.createWriteStream(file.name, file.size)
+		let writer = fileStream.getWriter()
+
+		// Unfortunately we have two different stream protocol so we can't pipe.
+		file.createReadStream()
+			.on('data', data => writer.write(data))
+			.on('end', () => writer.close())
+	})
+}
 ```
 
 How is this possible?
