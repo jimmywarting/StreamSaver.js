@@ -77,7 +77,7 @@ readableStream.pipeTo(fileStream)
 That is pretty much all StreamSaver.js dose :)
 
 
-Exampels
+Examples
 ======
 
 ### Writing some plain text
