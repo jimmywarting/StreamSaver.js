@@ -103,7 +103,7 @@
 				// close or abort is called.
 
 				// TODO: Kind of important that service worker respond back when
-				// it has been written. Otherwice we can't handle backpressure
+				// it has been written. Otherwise we can't handle backpressure
 				channel.port1.postMessage(chunk)
 			},
 			close() {
