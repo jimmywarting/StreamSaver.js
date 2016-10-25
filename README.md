@@ -31,7 +31,7 @@ Supported browsers
 
 Aha moments
 ===========
-  - Chrome don't show that the file is beeing download and won't give you a dialog to choose where to save it until you have written at least 1024 bytes or so (think headers are included)... Or until you close the stream<br>
+  - Chrome don't show that the file is being download and won't give you a dialog to choose where to save it until you have written at least 1024 bytes or so (think headers are included)... Or until you close the stream<br>
   But that only applies when you have the "ask where to save each time" turned on in your browser settings
   - Chrome was capable of writing more than 15 GB of data without any memory issues
 
@@ -217,7 +217,7 @@ So it all boils down to using
 [Response][13] and also WritableStream for convenience and backpressure
 
 
-Test localy
+Test locally
 ```bash
 # A simple php or python server is enough
 php -S localhost:3001
