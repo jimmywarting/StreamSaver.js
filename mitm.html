@@ -4,9 +4,9 @@
 	This is only meant to signal the opener's messageChannel to
 	the service worker - when that is done this mitm can be closed
 
-	The service worker is capitable of intercepting all request and fork theire
+	The service worker is capable of intercepting all request and fork their
 	own "fake" response - wish we are going to craft
-	when the worker then recives a stream then the worker will tell the opener
+	when the worker then receives a stream then the worker will tell the opener
 	to open up a link that will start the download
 -->
 <script>
@@ -23,8 +23,8 @@ if (window.location.host == host && window.location.protocol != "https:")
 window.onmessage = event => {
 	let {data, ports} = event
 
-	// It's important to have a messageChannel, don't want to interfair
-	// with other simultainus downloads
+	// It's important to have a messageChannel, don't want to interfere
+	// with other simultaneous downloads
     if(!ports || !ports.length)
         throw new TypeError("Mehhh! You didn't send a messageChannel")
 
