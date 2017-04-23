@@ -165,6 +165,9 @@ fetch(url).then(res => {
 })
 ```
 
+Here is an online demo with adding ID3 tag to mp3 file on the fly:
+[egoroof.ru/browser-id3-writer/stream](https://egoroof.ru/browser-id3-writer/stream)
+
 ### Get a node-stream from [webtorrent][19]
 **Note** it still keeps the data in memory. A more correct way to do this would be
 to use some kind of [Custom chunk store](https://webtorrent.io/docs#-client-add-torrentid-opts-function-ontorrent-torrent-) (must follow [abstract-chunk-store](https://www.npmjs.com/package/abstract-chunk-store) API)
