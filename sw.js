@@ -2,7 +2,7 @@
 const map = new Map
 
 // This should be called once per download
-// Each event has a dataChannel that the data will be piped throught
+// Each event has a dataChannel that the data will be piped through
 self.onmessage = event => {
     // Create a uniq link for the download
     let uniqLink = self.registration.scope + 'intercept-me-nr' + Math.random()
@@ -13,7 +13,7 @@ self.onmessage = event => {
 		map.set(uniqLink, [stream, event.data])
 		port.postMessage({download: uniqLink})
 
-		// Mistage adding this and have streamsaver.js relly on it
+		// Mistage adding this and have streamsaver.js rely on it
 		// depricated as from 0.2.1
 		port.postMessage({debug: 'Mocking a download request'})
     })
@@ -35,7 +35,7 @@ function createStream(resolve, reject, port){
     var bytesWritten = 0
     return new ReadableStream({
 		start(controller) {
-			// When we recive data on the messageChannel, we write
+			// When we receive data on the messageChannel, we write
 			port.onmessage = ({data}) => {
 				if (data === 'end') {
                     resolve()

@@ -1,6 +1,8 @@
 StreamSaver.js
 ==============
 
+[![npm version][npm-image]][npm-url]
+
 First I want to thank [Eli Grey][1] for a fantastic work implementing the
 [FileSaver.js][2] to save files & blobs so easily!
 But there is one obstacle - The RAM it can hold and the max blob size limitation
@@ -22,16 +24,16 @@ Supported browsers
 | Opera 39+  | Yes       |                         |
 | Chrome 52+ | Yes       |                         |
 | Firefox    | No        | Streams                 |
-| Safari TP  | No        | Streams, Fetch, SW      |
+| Safari     | No        | SW                      |
 | Edge       | No        | Streams, SW             |
 | IE         | No        | Everything (IE is dead) |
 
 
 Aha moments
 ===========
-  - Chrome don't show that the file is beeing download and won't give you a dialog to choose where to save it until you have written at least 1024 bytes or so (think headers are included)... Or until you close the stream<br>
+  - Chrome don't show that the file is being download and won't give you a dialog to choose where to save it until you have written at least 1024 bytes or so (think headers are included)... Or until you close the stream<br>
   But that only applies when you have the "ask where to save each time" turned on in your browser settings
-  - Chrome was capitable of writing more than 15 GB of data without any memory issues
+  - Chrome was capable of writing more than 15 GB of data without any memory issues
 
 
 Getting started
@@ -75,7 +77,7 @@ readableStream.pipeTo(fileStream)
 That is pretty much all StreamSaver.js dose :)
 
 
-Exampels
+Examples
 ======
 
 ### Writing some plain text
@@ -163,6 +165,9 @@ fetch(url).then(res => {
 })
 ```
 
+Here is an online demo with adding ID3 tag to mp3 file on the fly:
+[egoroof.ru/browser-id3-writer/stream](https://egoroof.ru/browser-id3-writer/stream)
+
 ### Get a node-stream from [webtorrent][19]
 **Note** it still keeps the data in memory. A more correct way to do this would be
 to use some kind of [Custom chunk store](https://webtorrent.io/docs#-client-add-torrentid-opts-function-ontorrent-torrent-) (must follow [abstract-chunk-store](https://www.npmjs.com/package/abstract-chunk-store) API)
@@ -215,7 +220,7 @@ So it all boils down to using
 [Response][13] and also WritableStream for convenience and backpressure
 
 
-Test localy
+Test locally
 ```bash
 # A simple php or python server is enough
 php -S localhost:3001
@@ -249,3 +254,5 @@ Go ahead and vote for how important this feature is
 [17]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/serviceworker
 [18]: https://bugzilla.mozilla.org/show_bug.cgi?id=1128959
 [19]: https://webtorrent.io
+[npm-image]: https://img.shields.io/npm/v/streamsaver.svg?style=flat-square
+[npm-url]: https://www.npmjs.com/package/streamsaver

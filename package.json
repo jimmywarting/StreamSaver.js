@@ -1,6 +1,6 @@
 {
     "name": "streamsaver",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "StreamSaver writes stream to the filesystem directly - asynchronous",
     "main": "StreamSaver.js",
     "scripts": {
@@ -13,7 +13,10 @@
     "keywords": [
         "saving",
         "streams",
-        "html5"
+        "stream",
+        "html5",
+        "file",
+        "blob"
     ],
     "author": "Jimmy Wärting <jimmy@warting.se>",
     "license": "MIT",
