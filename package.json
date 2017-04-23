@@ -1,6 +1,6 @@
 {
     "name": "streamsaver",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "StreamSaver writes stream to the filesystem directly - asynchronous",
     "main": "StreamSaver.js",
     "scripts": {
