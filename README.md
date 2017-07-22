@@ -74,7 +74,7 @@ writer.abort(reason) // ATM Canary only recognize if the stream has been errored
 // but then you shouldn't call .getWriter() or .close()
 readableStream.pipeTo(fileStream)
 ```
-That is pretty much all StreamSaver.js dose :)
+That is pretty much all StreamSaver.js does :)
 
 
 Examples
