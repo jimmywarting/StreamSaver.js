@@ -120,14 +120,16 @@
 				case "fetch":
 					// Here we could just simply open the link and then let
 					// the SW add Content-Disposition header to that request.
+					let myFile = streamSaver.createWriteStream(filename)
+					let writer = myFile.getWriter()
 					fetch(url).then(res => {
 						// https://jakearchibald.com/2016/streams-ftw/
 						// The body is a stream :)
 						let reader = res.body.getReader()
 						let pump = () => reader.read()
 							.then(res => res.done
-								? myFile.close()
-								: myFile.write(res.value).then(pump))
+								? writer.close()
+								: writer.write(res.value).then(pump))
 
 						pump()
 					})
