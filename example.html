@@ -126,8 +126,8 @@
 						let reader = res.body.getReader()
 						let pump = () => reader.read()
 							.then(res => res.done
-								? myFile.close()
-								: myFile.write(res.value).then(pump))
+								? writer.close()
+								: writer.write(res.value).then(pump))
 
 						pump()
 					})
