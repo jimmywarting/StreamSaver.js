@@ -28,7 +28,7 @@
 		// `chrome://flags/#enable-experimental-web-platform-features`
 	}
 
-	function createWriteStream(filename, queuingStrategy, size) {
+	function createWriteStream(filename, queuingStrategy, size, mitmUrl) {
 
 		// normalize arguments
 		if (Number.isFinite(queuingStrategy))
@@ -51,7 +51,7 @@
 
 			if(secure && !iframe) {
 				iframe = document.createElement('iframe')
-				iframe.src = streamSaver.mitm
+				iframe.src = mitmUrl || streamSaver.mitm
 				iframe.hidden = true
 				document.body.appendChild(iframe)
 			}
