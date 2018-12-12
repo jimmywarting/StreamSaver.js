@@ -5,7 +5,7 @@ const map = new Map()
 self.onmessage = event => {
   // We send a heartbeat every x secound to keep the
   // service worker alive
-  if (event.data === 'pong') {
+  if (event.data === 'ping') {
     return
   }
 
