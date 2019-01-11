@@ -249,7 +249,7 @@ Go ahead and vote for how important this feature is
 [12]: https://developer.mozilla.org/en-US/docs/Web/API/Window/open
 [13]: https://developer.mozilla.org/en-US/docs/Web/API/Response
 [14]: https://streams.spec.whatwg.org/#rs-class
-[15]: https://www.npmjs.com/package/web-streams-polyfill
+[15]: https://www.npmjs.com/package/@mattiasbuelens/web-streams-polyfill
 [16]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/fetchapi
 [17]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/serviceworker
 [18]: https://bugzilla.mozilla.org/show_bug.cgi?id=1128959
