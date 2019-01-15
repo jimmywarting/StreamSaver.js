@@ -139,16 +139,17 @@ get_user_media_stream_somehow().then(mediaStream => {
 ```
 
 ### Get a "stream" from ajax
-res.body is a readableByteStream, but don't have pipeTo yet<br>
-So we have to use the reader instead which is the underlying method in streams
 
 ```javascript
 fetch(url).then(res => {
 	const fileStream = streamSaver.createWriteStream('filename.txt')
 	const writer = fileStream.getWriter()
-	// Later you will be able to just simply do
-	// res.body.pipeTo(fileStream)
-
+	
+	if (res.body.pipeTo) {
+	  res.body.pipeTo(fileStream)
+	  return
+	}
+	
 	const reader = res.body.getReader()
 	const pump = () => reader.read()
 		.then(({ value, done }) => done
