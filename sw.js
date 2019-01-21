@@ -51,7 +51,6 @@ function createStream (port) {
 
 self.onfetch = event => {
   const url = event.request.url
-  console.log('Handleing ', url)
 
   if (url.endsWith('/ping')) {
     return event.respondWith(new Response('pong', {
