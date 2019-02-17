@@ -42,7 +42,7 @@ Getting started
 because the serviceWorker needs to respondWith a native version of the ReadableStream
 ```html
 <script src="StreamSaver.js"></script> <!-- load before streams polyfill to detect support -->
-<script src="https://cdn.rawgit.com/creatorrr/web-streams-polyfill/master/dist/polyfill.min.js"></script>
+<script src="https://unpkg.com/@mattiasbuelens/web-streams-polyfill/dist/polyfill.min.js"></script>
 <script>
 	// it also support commonJs and amd
 	import { createWriteStream, supported, version } from 'StreamSaver'
@@ -139,15 +139,18 @@ get_user_media_stream_somehow().then(mediaStream => {
 ```
 
 ### Get a "stream" from ajax
-res.body is a readableByteStream, but don't have pipeTo yet<br>
-So we have to use the reader instead which is the underlying method in streams
 
 ```javascript
 fetch(url).then(res => {
 	const fileStream = streamSaver.createWriteStream('filename.txt')
 	const writer = fileStream.getWriter()
-	// Later you will be able to just simply do
-	// res.body.pipeTo(fileStream)
+
+  // more optimized
+  if (res.body.pipeTo) {
+    // like as we never did fileStream.getWriter()
+    writer.releaseLock()
+    return res.body.pipeTo(fileStream)
+  }
 
 	const reader = res.body.getReader()
 	const pump = () => reader.read()
@@ -249,7 +252,7 @@ Go ahead and vote for how important this feature is
 [12]: https://developer.mozilla.org/en-US/docs/Web/API/Window/open
 [13]: https://developer.mozilla.org/en-US/docs/Web/API/Response
 [14]: https://streams.spec.whatwg.org/#rs-class
-[15]: https://www.npmjs.com/package/web-streams-polyfill
+[15]: https://www.npmjs.com/package/@mattiasbuelens/web-streams-polyfill
 [16]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/fetchapi
 [17]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/serviceworker
 [18]: https://bugzilla.mozilla.org/show_bug.cgi?id=1128959
