@@ -118,7 +118,7 @@
         // Here we could just simply open the link and then let
         // the SW add Content-Disposition header to that request.
         fetch(url).then(res => {
-          // more optimzed
+          // more optimized
           if (res.body.pipeTo) {
             // like as we never did fileStream.getWriter()
             writer.releaseLock()

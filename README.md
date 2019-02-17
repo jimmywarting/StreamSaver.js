@@ -144,12 +144,14 @@ get_user_media_stream_somehow().then(mediaStream => {
 fetch(url).then(res => {
 	const fileStream = streamSaver.createWriteStream('filename.txt')
 	const writer = fileStream.getWriter()
-	
-	if (res.body.pipeTo) {
-	  res.body.pipeTo(fileStream)
-	  return
-	}
-	
+
+  // more optimized
+  if (res.body.pipeTo) {
+    // like as we never did fileStream.getWriter()
+    writer.releaseLock()
+    return res.body.pipeTo(fileStream)
+  }
+
 	const reader = res.body.getReader()
 	const pump = () => reader.read()
 		.then(({ value, done }) => done
