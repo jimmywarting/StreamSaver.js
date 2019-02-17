@@ -50,13 +50,23 @@ window.onmessage = event => {
 
     if (swReg.active) {
       keepAlive(swReg.active)
-      return swReg.active.postMessage(data, [ports[0]])
+      return swReg.active.postMessage(
+        data,
+        data.readableStream
+          ? [ ports[0], data.readableStream ]
+          : [ ports[0] ]
+        )
     }
 
     swRegTmp.onstatechange = () => {
       if (swRegTmp.state === 'activated') {
         swRegTmp.onstatechange = null
-        swReg.active.postMessage(data, [ports[0]])
+        swReg.active.postMessage(
+          data,
+          data.readableStream
+            ? [ ports[0], data.readableStream ]
+            : [ ports[0] ]
+          )
         keepAlive(swReg.active)
       }
     }

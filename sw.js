@@ -1,3 +1,5 @@
+/* global self ReadableStream Response */
+
 const map = new Map()
 
 // This should be called once per download
@@ -13,7 +15,7 @@ self.onmessage = event => {
   const uniqLink = self.registration.scope + 'intercept-me-nr' + Math.random()
   const port = event.ports[0]
 
-  const stream = createStream(port)
+  const stream = event.data.readableStream || createStream(port)
   map.set(uniqLink, [stream, event.data])
   port.postMessage({ download: uniqLink, ping: self.registration.scope + 'ping' })
 
@@ -24,7 +26,6 @@ self.onmessage = event => {
 
 function createStream (port) {
   // ReadableStream is only supported by chrome 52
-  let bytesWritten = 0
   return new ReadableStream({
     start (controller) {
       // When we receive data on the messageChannel, we write
@@ -39,8 +40,6 @@ function createStream (port) {
         }
 
         controller.enqueue(data)
-        bytesWritten += data.byteLength
-        port.postMessage({ bytesWritten })
       }
     },
     cancel () {

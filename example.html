@@ -1,229 +1,231 @@
 <!DOCTYPE html>
 <html><head>
 
-	<meta charset="utf-8">
-	<title>StreamSaver example</title>
+  <meta charset="utf-8">
+  <title>StreamSaver example</title>
 
 </head><body>
 
-	<a class="github-corner" target="_blank" href="https://github.com/jimmywarting/StreamSaver.js">
-		<svg width="100" height="100" viewbox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;">
-			<path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
-			<path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path>
-			<text class="github-corner-text" text-anchor="middle" x="175" y="25" transform="rotate(45)" font-size="30" font-weight="bold">Fork me on Github</text>
-		</svg>
-		<style>.github-corner:hover .octo-arm{animation: octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%, 100%{transform: rotate(0)}20%, 60%{transform: rotate(-25deg)}40%, 80%{transform: rotate(10deg)}}@media (max-width: 500px){.github-corner:hover .octo-arm{animation: none}.github-corner .octo-arm{animation: octocat-wave 560ms ease-in-out}.github-corner-text{display: none;}.github-corner svg{height: 50px; width: 50px;}}</style>
-	</a>
+  <a class="github-corner" target="_blank" href="https://github.com/jimmywarting/StreamSaver.js">
+    <svg width="100" height="100" viewbox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;">
+      <path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"></path>
+      <path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"></path><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"></path>
+      <text class="github-corner-text" text-anchor="middle" x="175" y="25" transform="rotate(45)" font-size="30" font-weight="bold">Fork me on Github</text>
+    </svg>
+    <style>.github-corner:hover .octo-arm{animation: octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%, 100%{transform: rotate(0)}20%, 60%{transform: rotate(-25deg)}40%, 80%{transform: rotate(10deg)}}@media (max-width: 500px){.github-corner:hover .octo-arm{animation: none}.github-corner .octo-arm{animation: octocat-wave 560ms ease-in-out}.github-corner-text{display: none;}.github-corner svg{height: 50px; width: 50px;}}</style>
+  </a>
 
-	<h1>Example of saving a stream directly to the filesystem</h1>
-	<form id="$form">
-		<h3>What would you like to save?</h3>
-		<label>
-			<input name="kind" value="text" type="radio" checked>Plain text (Save as you type)</label><br>
-		<label><input name="kind" value="video" type="radio">Video stream</label><br>
-		<label><input name="kind" value="audio" type="radio">Audio stream</label><br>
-		<label><input name="kind" value="torrent" type="radio">Torrent</label><br>
-		<label><input name="kind" value="fetch" type="radio">Fetch stream</label>
-		 - kind of cheesy, since you can use fetchEvent to add
-		 Content-Disposition header (but requires service worker + ssl)<br>
-		<label><input name="kind" value="screen" type="radio">Screen stream</label>
-		- requires chromes <a href="https://goo.gl/5La0Iz">Screen Capturing</a> extension<br><br>
-		<label>What should the name of the file be?<br>
-			<input name="$filename" required value="sample.txt">
-		</label>
-		<input type="submit" value="Start">
-	</form>
-	<div id="$writer" hidden>
-		<button id="$a">Write some aaa's</button>
-		<button id="$b">Write some bbb's</button>
-		<button id="$c">Write some ccc's</button>
-		<button id="$ipsum">Write a lot of Lorem ipsum</button>
-	</div>
-	<button id="$close" hidden title="When you are done writing">Close</button>
-	<button id="$abort" hidden title="When you want to abort">Abort</button>
-	<script src="StreamSaver.js"></script>
-	<script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
-	<script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
+  <h1>Example of saving a stream directly to the filesystem</h1>
+  <form id="$form">
+    <h3>What would you like to save?</h3>
+    <label>
+      <input name="kind" value="text" type="radio" checked>Plain text (Save as you type)</label><br>
+      <label><input name="kind" value="video" type="radio">Video stream</label><br>
+      <label><input name="kind" value="audio" type="radio">Audio stream</label><br>
+      <label><input name="kind" value="torrent" type="radio">Torrent</label><br>
+      <label><input name="kind" value="fetch" type="radio">Fetch stream</label>
+      - kind of cheesy, since you can use fetchEvent to add
+      Content-Disposition header (but requires service worker + ssl)<br>
+      <label><input name="kind" value="screen" type="radio">Screen stream</label>
+      - requires chromes <a href="https://goo.gl/5La0Iz">Screen Capturing</a> extension<br><br>
+      <label>What should the name of the file be?<br>
+        <input name="$filename" required value="sample.txt">
+      </label>
+      <input type="submit" value="Start">
+    </form>
+    <div id="$writer" hidden>
+      <button id="$a">Write some aaa's</button>
+      <button id="$b">Write some bbb's</button>
+      <button id="$c">Write some ccc's</button>
+      <button id="$ipsum">Write a lot of Lorem ipsum</button>
+    </div>
+    <button id="$close" hidden title="When you are done writing">Close</button>
+    <button id="$abort" hidden title="When you want to abort">Abort</button>
+    <script src="StreamSaver.js"></script>
+    <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@1.3.2/dist/polyfill.min.js"></script> -->
+    <script src="https://rawgit.com/jimmywarting/browser-su/master/build/permissions.js"></script>
 
-	<!-- 1.2.2 -->
-	<script src="https://cdn.rawgit.com/creatorrr/web-streams-polyfill/68f93d7240d925d27b175ce39133f57993c3f109/dist/polyfill.min.js"
-		integrity="sha384-wC6EeO3kVv23JQA/XjoEHMvxOwXZXIRdxvhOt8rOcoGPYQnPbumUJugHHoJAdM0x"
-		crossorigin="anonymous">
-	</script>
+    <script>
+    !streamSaver.supported && prompt(
+      'ReadableStream is not supported, you can enable it in chrome, or wait until v52',
+      'chrome://flags/#enable-experimental-web-platform-features'
+    )
 
-	<script>
-		!streamSaver.supported && prompt(
-			'ReadableStream is not supported, you can enable it in chrome, or wait until v52',
-			'chrome://flags/#enable-experimental-web-platform-features'
-		)
+    // streamSaver.mitm = '/mitm.html'
 
-		var Lorem = `Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-		Pellentesque gravida condimentum metus et porttitor. Curabitur
-		pharetra vestibulum egestas. Pellentesque quis tortor id ligula
-		cursus luctus ac at nisi. Mauris rutrum mattis vulputate. Donec
-		tempor eget lectus eu rhoncus. Etiam et auctor est. Aenean sem augue,
-		consectetur et ipsum fringilla, rhoncus tincidunt sem. Duis vel
-		rutrum lectus, non dui. Duis non urna non dolor elementum
-		commodo. Praesent commodo maximus lobortis. Curabitur fringilla
-		tellus`.replace(/\s\s+/g, ' ')
+    var Lorem = `Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+    Pellentesque gravida condimentum metus et porttitor. Curabitur
+    pharetra vestibulum egestas. Pellentesque quis tortor id ligula
+    cursus luctus ac at nisi. Mauris rutrum mattis vulputate. Donec
+    tempor eget lectus eu rhoncus. Etiam et auctor est. Aenean sem augue,
+    consectetur et ipsum fringilla, rhoncus tincidunt sem. Duis vel
+    rutrum lectus, non dui. Duis non urna non dolor elementum
+    commodo. Praesent commodo maximus lobortis. Curabitur fringilla
+    tellus`.replace(/\s\s+/g, ' ')
 
-		$form.onsubmit = event => {
-			event.preventDefault()
+    $form.onsubmit = event => {
+      event.preventDefault()
 
-			let
-			kind = $form.querySelector(':checked').value,
-			filename = $form.$filename.value,
-			permission,
-			writer,
-			url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4",
-			fileStream = streamSaver.createWriteStream(filename)
+      let
+      kind = $form.querySelector(':checked').value,
+      filename = $form.$filename.value,
+      permission,
+      writer,
+      url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4",
+      fileStream = streamSaver.createWriteStream(filename)
 
-			writer = fileStream.getWriter()
-			$abort.onclick = event => writer.abort()
-			$close.onclick = event => writer.close()
+      writer = fileStream.getWriter()
+      $abort.onclick = event => writer.abort()
+      $close.onclick = event => writer.close()
 
-			$form.remove()
-			$abort.hidden = false
-			$close.hidden = false
+      $form.remove()
+      $abort.hidden = false
+      $close.hidden = false
 
-			switch (kind) {
-				case "text":
-					$writer.hidden = false
-					let encoder = new TextEncoder
+      switch (kind) {
+        case "text":
+        $writer.hidden = false
+        let encoder = new TextEncoder
 
-					$a.onclick = $b.onclick = $c.onclick = event => {
-						let data = event.target.id[1].repeat(1024)
-						let uint8array = encoder.encode(data + "\n\n")
-						writer.write(uint8array)
-					}
+        $a.onclick = $b.onclick = $c.onclick = event => {
+          let data = event.target.id[1].repeat(1024)
+          let uint8array = encoder.encode(data + "\n\n")
+          writer.write(uint8array)
+        }
 
-					$ipsum.onclick = event => {
-						let text = encoder.encode((Lorem + "\n\n").repeat(2*1024)) // 1 MiB
-						let n = ~~prompt("How many MiB of lorem ipsum text do you want?", '1024')
-						// n *= 1024
-						let que = Promise.resolve()
-						let pump = () => {
-							n-- && que.then(() => {
-								writer.write(text).then(()=>{setTimeout(pump)})
-							})
-						}
-						pump()
-					}
+        $ipsum.onclick = event => {
+          let text = encoder.encode((Lorem + "\n\n").repeat(2*1024)) // 1 MiB
+          let n = ~~prompt("How many MiB of lorem ipsum text do you want?", '1024')
+          // n *= 1024
+          let que = Promise.resolve()
+          let pump = () => {
+            n-- && que.then(() => {
+              writer.write(text).then(()=>{setTimeout(pump)})
+            })
+          }
+          pump()
+        }
 
-				break; case "video":
-					permission = {name: 'userMedia', video: true}
-				break; case "audio":
-					permission = {name: 'userMedia', audio: true}
-				break; case "screen":
-					permission = {name: 'screen'}
-				break;
-				case "fetch":
-					// Here we could just simply open the link and then let
-					// the SW add Content-Disposition header to that request.
-					fetch(url).then(res => {
-						// https://jakearchibald.com/2016/streams-ftw/
-						// The body is a stream :)
-						let reader = res.body.getReader()
-						let pump = () => reader.read()
-							.then(res => res.done
-								? writer.close()
-								: writer.write(res.value).then(pump))
+        break; case "video":
+        permission = { name: 'userMedia', video: true }
+        break; case "audio":
+        permission = { name: 'userMedia', audio: true }
+        break; case "screen":
+        permission = { name: 'screen'}
+        break;
+        case "fetch":
+        // Here we could just simply open the link and then let
+        // the SW add Content-Disposition header to that request.
+        fetch(url).then(res => {
+          // more optimzed
+          if (res.body.pipeTo) {
+            // like as we never did fileStream.getWriter()
+            writer.releaseLock()
 
-						pump()
-					})
-				break; case "torrent":
+            return res.body.pipeTo(fileStream)
+          }
 
-					$close.disabled = true
-					$close.innerText = 'getting meta info'
+          let reader = res.body.getReader()
+          let pump = () => reader.read()
+          .then(res => res.done
+            ? writer.close()
+            : writer.write(res.value).then(pump))
 
-					var client = new WebTorrent()
-					// Sintel, a free, Creative Commons movie
-					var torrentId = 'magnet:?xt=urn:btih:6a9759bffd5c0af65319979fb7832189f4f3c35d&dn=sintel.mp4&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.webtorrent.io&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel-1024-surround.mp4'
+            pump()
+          })
+          break; case "torrent":
 
-					function size(bytes, precision) {
-						if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
-						if (typeof precision === 'undefined') precision = 1;
-						var units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'],
-						number = Math.floor(Math.log(bytes) / Math.log(1024));
-						return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
-					}
+          $close.disabled = true
+          $close.innerText = 'getting meta info'
 
-					client.add(torrentId, function (torrent) {
-						$close.remove()
-						var meter = document.createElement('meter')
-						document.body.appendChild(meter)
-						var speed = document.createElement('p')
-						document.body.appendChild(speed)
-						var downloaded = document.createElement('p')
-						document.body.appendChild(downloaded)
-						var timeLeft = document.createElement('p')
-						document.body.appendChild(timeLeft)
+          var client = window.client = new WebTorrent()
+          // Sintel, a free, Creative Commons movie
+          var torrentId = 'https://webtorrent.io/torrents/sintel.torrent'
 
-						torrent.on('download', function (bytes) {
-							downloaded.innerText =  `total downloaded: ${size(torrent.downloaded)} of ${size(torrent.length)}`
-							speed.innerText = 'download speed: ' + size(torrent.downloadSpeed)
-							timeLeft.innerText = 'Time Left: ' + (torrent.timeRemaining / 1000).toFixed(0) + ' sec'
-							meter.value = torrent.progress
-						})
+          function size(bytes, precision) {
+            if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
+            if (typeof precision === 'undefined') precision = 1;
+            var units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'],
+            number = Math.floor(Math.log(bytes) / Math.log(1024));
+            return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
+          }
 
-						torrent.files.forEach(file => {
-							let myFile = streamSaver.createWriteStream(file.name, file.length)
-							let writer = myFile.getWriter()
+          client.add(torrentId, function (torrent) {
+            $close.remove()
+            var meter = document.createElement('meter')
+            document.body.appendChild(meter)
+            var speed = document.createElement('p')
+            document.body.appendChild(speed)
+            var downloaded = document.createElement('p')
+            document.body.appendChild(downloaded)
+            var timeLeft = document.createElement('p')
+            document.body.appendChild(timeLeft)
 
-							file.createReadStream()
-								.on('data', data => writer.write(data))
-								.on('end', () => writer.close())
-						})
-					})
+            torrent.on('download', function (bytes) {
+              downloaded.innerText =  `total downloaded: ${size(torrent.downloaded)} of ${size(torrent.length)}`
+              speed.innerText = 'download speed: ' + size(torrent.downloadSpeed)
+              timeLeft.innerText = 'Time Left: ' + (torrent.timeRemaining / 1000).toFixed(0) + ' sec'
+              meter.value = torrent.progress
+            })
 
-				break;
-			}
+            const file = torrent.files[5]
+            let myFile = streamSaver.createWriteStream(file.name, file.length)
+            let writer = myFile.getWriter()
 
-			permission && su.request(permission).then(stream => {
-				let fr = new FileReader
-				let mediaRecorder = new MediaRecorder(stream)
-				let chunks = Promise.resolve()
+            file.createReadStream()
+            .on('data', data => writer.write(data))
+            .on('end', () => writer.close())
+          })
 
-				mediaRecorder.start()
-				$close.onclick = event => {
-					stopStream(stream)
-					mediaRecorder.stop()
-					setTimeout(()=>{
-						chunks.then(evt => {
-							myFile.close()
-						})
-					}, 1000)
-				}
-				mediaRecorder.ondataavailable = evt => {
-					let blob = evt.data
+          break;
+        }
 
-					chunks = chunks.then(() => new Promise(resolve => {
-						fr.onload = () => {
-							// Should we let the serviceWorker be able to accept
-							// anything other then uint8array? ReadableStream don't seems
-							// so happy with anything else... but could load of some work
-							// of the main thread +1
-							let uint8array = new Uint8Array(fr.result)
-							myFile.write(uint8array)
-							resolve()
-						}
-						fr.readAsArrayBuffer(blob)
-					}))
-				}
+        permission && su.request(permission).then(stream => {
+          let fr = new FileReader
+          let mediaRecorder = new MediaRecorder(stream)
+          let chunks = Promise.resolve()
 
-			})
-		}
+          mediaRecorder.start()
+          $close.onclick = event => {
+            stopStream(stream)
+            mediaRecorder.stop()
+            setTimeout(()=>{
+              chunks.then(evt => {
+                myFile.close()
+              })
+            }, 1000)
+          }
+          mediaRecorder.ondataavailable = evt => {
+            let blob = evt.data
+
+            chunks = chunks.then(() => new Promise(resolve => {
+              fr.onload = () => {
+                // Should we let the serviceWorker be able to accept
+                // anything other then uint8array? ReadableStream don't seems
+                // so happy with anything else... but could load of some work
+                // of the main thread +1
+                let uint8array = new Uint8Array(fr.result)
+                myFile.write(uint8array)
+                resolve()
+              }
+              fr.readAsArrayBuffer(blob)
+            }))
+          }
+
+        })
+      }
 
 
-		function stopStream (stream) {
-			let tracks = [
-				...stream.getAudioTracks(),
-				...stream.getVideoTracks()
-			]
+      function stopStream (stream) {
+        let tracks = [
+          ...stream.getAudioTracks(),
+          ...stream.getVideoTracks()
+        ]
 
-			for(let track of tracks)
-				track.stop()
-		}
-	</script>
+        for(let track of tracks)
+        track.stop()
+      }
+      </script>
 
-</body></html>
+    </body></html>
