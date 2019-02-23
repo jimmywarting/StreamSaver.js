@@ -64,11 +64,21 @@
         // we recive the readable link (stream)
         if (evt.data.download) {
           resolve() // Signal that the writestream are ready to recive data
-          if (!secure) popup.close() // don't need the popup any longer
-          let link = document.createElement('a')
-          let click = new MouseEvent('click')
-          link.href = evt.data.download
-          link.dispatchEvent(click)
+          if (!secure) {
+            popup.close() // don't need the popup any longer
+            let link = document.createElement('a')
+            let click = new MouseEvent('click')
+            link.href = evt.data.download
+            link.dispatchEvent(click)
+          } else {
+            let iframe2 = document.createElement('iframe')
+            iframe2.hidden = true
+            document.body.appendChild(iframe2)
+            iframe2.src = evt.data.download
+            setTimeout(() => {
+              document.body.removeChild(iframe2);
+            }, 1000);
+          }
 
           // Cleanup
           if (readableStream) {
