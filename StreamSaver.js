@@ -65,10 +65,7 @@
         if (evt.data.download) {
           resolve() // Signal that the writestream are ready to recive data
           if (!secure) popup.close() // don't need the popup any longer
-          let link = document.createElement('a')
-          let click = new MouseEvent('click')
-          link.href = evt.data.download
-          link.dispatchEvent(click)
+          window.location = evt.data.download
 
           // Cleanup
           if (readableStream) {
