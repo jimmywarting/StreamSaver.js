@@ -27,6 +27,8 @@
 
   streamSaver.mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
     streamSaver.version.full
+  streamSaver.ping = 'https://jimmywarting.github.io/StreamSaver.js/ping.html?version=' +
+    streamSaver.version.full
 
   try {
     // Some browser has it but ain't allowed to construct a stream yet
@@ -66,13 +68,29 @@
         // we recive the readable link (stream)
         if (evt.data.download) {
           resolve() // Signal that the writestream are ready to recive data
-          if (!secure) popup.close() // don't need the popup any longer
-          if (window.chrome && chrome.extension &&
-              chrome.extension.getBackgroundPage &&
-              chrome.extension.getBackgroundPage() === window) {
-            chrome.tabs.create({ url: evt.data.download, active: false })
+          let download = () => {
+            if (!secure) popup.close() // don't need the popup any longer
+            if (window.chrome && chrome.extension &&
+                chrome.extension.getBackgroundPage &&
+                chrome.extension.getBackgroundPage() === window) {
+              chrome.tabs.create({ url: evt.data.download, active: false })
+            } else {
+              window.location = evt.data.download
+            }
+          }
+          if (!secure && !transfarableSupport && !iframe && navigator.userAgent.indexOf('Firefox') !== -1) {
+            iframe = document.createElement('iframe')
+            iframe.hidden = true
+            document.body.appendChild(iframe)
+            let fn2;
+            iframe.addEventListener('load', fn2 = () => {
+              iframe.removeEventListener('load', fn2)
+              iframe.contentWindow.postMessage(evt.data, '*')
+              download()
+            })
+            iframe.src = streamSaver.ping
           } else {
-            window.location = evt.data.download
+            download()
           }
 
           // Cleanup

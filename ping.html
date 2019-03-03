@@ -1,0 +1,12 @@
+<!--
+	ping.html is a second "man in the middle" to ping the ServiceWorker and keep it alive
+
+	This is meant to keep the Service Worker from timing out while the download happens,
+  but since we can't ping the Service Worker directly from here we use a Shared Worker
+  to do the pinging. The Shared Worker stays alive until this iframe is closed.
+-->
+<script>
+let ping = new SharedWorker('ping.js')
+
+window.onmessage = event => ping.port.postMessage(event.data)
+</script>
