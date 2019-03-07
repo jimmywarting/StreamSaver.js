@@ -23,8 +23,8 @@ Supported browsers
 | ---------- | --------- | ----------------------- |
 | Opera 39+  | Yes       |                         |
 | Chrome 52+ | Yes       |                         |
-| Firefox    | No        | Streams                 |
-| Safari     | No        | SW                      |
+| Firefox 65+| Yes       |                         |
+| Safari     | No        | download functionality  |
 | Edge       | No        | Streams, SW             |
 | IE         | No        | Everything (IE is dead) |
 
