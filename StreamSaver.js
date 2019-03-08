@@ -8,7 +8,9 @@
 })('streamSaver', () => {
   'use strict'
 
-  const secure = location.protocol === 'https:' || location.hostname === 'localhost'
+  const secure = location.protocol === 'https:' ||
+                 location.protocol === 'chrome-extension:' ||
+                 location.hostname === 'localhost'
   let iframe
   let loaded
   let transfarableSupport = false
@@ -16,9 +18,9 @@
     createWriteStream,
     supported: false,
     version: {
-      full: '1.1.0',
+      full: '1.2.0',
       major: 1,
-      minor: 1,
+      minor: 2,
       dot: 0
     }
   }
@@ -65,10 +67,13 @@
         if (evt.data.download) {
           resolve() // Signal that the writestream are ready to recive data
           if (!secure) popup.close() // don't need the popup any longer
-          let link = document.createElement('a')
-          let click = new MouseEvent('click')
-          link.href = evt.data.download
-          link.dispatchEvent(click)
+          if (window.chrome && chrome.extension &&
+              chrome.extension.getBackgroundPage &&
+              chrome.extension.getBackgroundPage() === window) {
+            chrome.tabs.create({ url: evt.data.download, active: false })
+          } else {
+            window.location = evt.data.download
+          }
 
           // Cleanup
           if (readableStream) {

@@ -23,7 +23,7 @@ let keepAlive = sw => {
   keepAlive = () => {}
   setInterval(() => {
     sw.postMessage('ping', [new MessageChannel().port2])
-  }, 27E4) // 4.5min
+  }, 29E3) // 29sec
 }
 
 // message event is the first thing we need to setup a listner for
