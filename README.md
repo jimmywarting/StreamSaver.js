@@ -142,29 +142,26 @@ get_user_media_stream_somehow().then(mediaStream => {
 
 ```javascript
 fetch(url).then(res => {
-	const fileStream = streamSaver.createWriteStream('filename.txt')
-	const writer = fileStream.getWriter()
+  const fileStream = streamSaver.createWriteStream('filename.txt')
 
   // more optimized
   if (res.body.pipeTo) {
-    // like as we never did fileStream.getWriter()
-    writer.releaseLock()
     return res.body.pipeTo(fileStream)
   }
+  
+  const writer = fileStream.getWriter()
+  const reader = res.body.getReader()
+  const pump = () => reader.read().then(({ value, done }) => done
+    // close the stream so we stop writing
+    ? writer.close()
+    // Write one chunk, then get the next one
+    : writer.write(value).then(pump)
+  )
 
-	const reader = res.body.getReader()
-	const pump = () => reader.read()
-		.then(({ value, done }) => done
-			// close the stream so we stop writing
-			? writer.close()
-			// Write one chunk, then get the next one
-			: writer.write(value).then(pump)
-		)
-
-	// Start the reader
-	pump().then(() =>
-		console.log('Closed the stream, Done writing')
-	)
+  // Start the reader
+  pump().then(() =>
+    console.log('Closed the stream, Done writing')
+  )
 })
 ```
 
