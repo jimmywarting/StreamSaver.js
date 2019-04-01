@@ -22,6 +22,8 @@
   let transferableTransformStream
   let streamSaver = {
     createWriteStream,
+    writableStream: window.WritableStream ||
+                    window.WebStreamsPolyfill && WebStreamsPolyfill.WritableStream,
     supported: false,
     version: {
       full: '1.2.0',
@@ -201,7 +203,7 @@
       return ts.writable
     }
 
-    return new WritableStream({
+    return new streamSaver.writableStream({
       start () {
         // is called immediately, and should perform any actions
         // necessary to acquire access to the underlying sink.
