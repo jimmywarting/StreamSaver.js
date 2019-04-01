@@ -19,7 +19,7 @@
                  location.hostname === 'localhost'
   let iframe
   let loaded
-  let transfarableSupport = false
+  let transferableTransformStream
   let streamSaver = {
     createWriteStream,
     supported: false,
@@ -47,9 +47,9 @@
     mc.port1.postMessage(readable, [readable])
     mc.port1.close()
     mc.port2.close()
-    transfarableSupport = readable.locked === true
+    transferableTransformStream = readable.locked === true ? TransformStream : 0
   } catch (err) {
-    // Was first enabled in chrome v73
+    // Was first enabled in chrome v73 behind a flag
   }
 
   function iframePostMessage(url, args) {
@@ -165,7 +165,7 @@
       if (secure) {
         return iframePostMessage(streamSaver.mitm, args)
       }
-      if (!hash && mozExtension && !transfarableSupport) {
+      if (!hash && mozExtension && !transferableTransformStream) {
         hash = '#' + Math.random()
       }
       popup = load(streamSaver.mitm + hash, !hash, 1)
@@ -189,8 +189,8 @@
       }
     })
 
-    if (transfarableSupport) {
-      const ts = new TransformStream({
+    if (transferableTransformStream) {
+      const ts = new transferableTransformStream({
         start () {
           return new Promise(resolve =>
             setTimeout(() => setupChannel(ts.readable).then(resolve))
