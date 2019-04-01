@@ -8,8 +8,14 @@
 })('streamSaver', () => {
   'use strict'
 
+  const firefox = navigator.userAgent.indexOf('Firefox') !== -1
+  const mozExtension = location.protocol === 'moz-extension:'
+  const background = window.chrome && chrome.extension &&
+                     chrome.extension.getBackgroundPage &&
+                     chrome.extension.getBackgroundPage() === window
   const secure = location.protocol === 'https:' ||
                  location.protocol === 'chrome-extension:' ||
+                 mozExtension && !background ||
                  location.hostname === 'localhost'
   let iframe
   let loaded
@@ -26,6 +32,8 @@
   }
 
   streamSaver.mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
+    streamSaver.version.full
+  streamSaver.ping = 'https://jimmywarting.github.io/StreamSaver.js/ping.html?version=' +
     streamSaver.version.full
 
   try {
@@ -44,6 +52,69 @@
     // Was first enabled in chrome v73
   }
 
+  function iframePostMessage(url, args) {
+    if (!iframe) {
+      iframe = document.createElement('iframe')
+      iframe.hidden = true
+      document.body.appendChild(iframe)
+      iframe.src = url
+    }
+    if (!loaded) {
+      let fn2
+      iframe.addEventListener('load', fn2 = () => {
+        loaded = true
+        iframe.removeEventListener('load', fn2)
+        iframe.contentWindow.postMessage(...args)
+      })
+    } else {
+      iframe.contentWindow.postMessage(...args)
+    }
+  }
+
+  function load(url, noTabs, popUp) {
+    let popup = { close: () => popup.closed = 1, fns: [], onLoad: fn => popup.fns.push(fn) }
+    if (!noTabs && window.chrome && chrome.tabs && chrome.tabs.create) {
+      chrome.tabs.create({ url: url, active: false }, popup2 => {
+        popup.close = () => chrome.tabs.remove(popup2.id)
+        if (popup.closed) {
+          popup.close()
+        } else {
+          let fn
+          chrome.tabs.onUpdated.addListener(fn = (tabId, changeInfo, tab) => {
+            if (tabId == popup2.id && tab.status == "complete") {
+              chrome.tabs.onUpdated.removeListener(fn)
+              popup.onLoad = fn => fn()
+              popup.fns.forEach(popup.onLoad)
+            }
+          })
+        }
+      })
+    } else {
+      if (popUp) {
+        popup = window.open(url, Math.random())
+      } else {
+        if (mozExtension || background) {
+          let iframe2 = document.createElement('iframe')
+          iframe2.hidden = true
+          document.body.appendChild(iframe2)
+          iframe2.src = url
+          popup.close = () => document.body.removeChild(iframe2)
+        } else {
+          if (iframe && !loaded) {
+            let fn2
+            iframe.addEventListener('load', fn2 = () => {
+              iframe.removeEventListener('load', fn2)
+              window.location = url
+            })
+          } else {
+            window.location = url
+          }
+        }
+      }
+    }
+    return popup
+  }
+
   function createWriteStream (filename, queuingStrategy, size) {
     // normalize arguments
     if (Number.isFinite(queuingStrategy)) {
@@ -52,6 +123,7 @@
 
     let channel = new MessageChannel()
     let popup
+    let hash = ''
     let setupChannel = readableStream => new Promise(resolve => {
       const args = [ { filename, size }, '*', [ channel.port2 ] ]
 
@@ -66,14 +138,13 @@
         // we recive the readable link (stream)
         if (evt.data.download) {
           resolve() // Signal that the writestream are ready to recive data
-          if (!secure) popup.close() // don't need the popup any longer
-          if (window.chrome && chrome.extension &&
-              chrome.extension.getBackgroundPage &&
-              chrome.extension.getBackgroundPage() === window) {
-            chrome.tabs.create({ url: evt.data.download, active: false })
-          } else {
-            window.location = evt.data.download
+          if (popup) {
+            if (!hash && !iframe && firefox) {
+              iframePostMessage(streamSaver.ping, [evt.data, '*'])
+            }
+            popup.close() // don't need the popup any longer
           }
+          popup = load(evt.data.download, secure)
 
           // Cleanup
           if (readableStream) {
@@ -81,33 +152,24 @@
             channel.port1.close()
             channel.port2.close()
           }
+        } else {
+          if (popup) {
+            if (firefox) popup.close()
+            popup = 0
+          }
 
           channel.port1.onmessage = null
         }
       }
 
-      if (secure && !iframe) {
-        iframe = document.createElement('iframe')
-        iframe.src = streamSaver.mitm
-        iframe.hidden = true
-        document.body.appendChild(iframe)
+      if (secure) {
+        return iframePostMessage(streamSaver.mitm, args)
       }
-
-      if (secure && !loaded) {
-        let fn
-        iframe.addEventListener('load', fn = () => {
-          loaded = true
-          iframe.removeEventListener('load', fn)
-          iframe.contentWindow.postMessage(...args)
-        })
+      if (!hash && mozExtension && !transfarableSupport) {
+        hash = '#' + Math.random()
       }
-
-      if (secure && loaded) {
-        iframe.contentWindow.postMessage(...args)
-      }
-
-      if (!secure) {
-        popup = window.open(streamSaver.mitm, Math.random())
+      popup = load(streamSaver.mitm + hash, !hash, 1)
+      if (popup.postMessage) {
         let onready = evt => {
           if (evt.source === popup) {
             popup.postMessage(...args)
@@ -119,6 +181,11 @@
         // so popup.onload() don't work but postMessage still dose
         // work cross origin
         window.addEventListener('message', onready)
+      } else {
+        popup.onLoad(() => {
+          args[0].hash = hash
+          iframePostMessage(streamSaver.ping, args)
+        })
       }
     })
 

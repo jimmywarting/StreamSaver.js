@@ -16,12 +16,9 @@ self.onmessage = event => {
   const port = event.ports[0]
 
   const stream = event.data.readableStream || createStream(port)
+  stream.port = port
   map.set(uniqLink, [stream, event.data])
   port.postMessage({ download: uniqLink, ping: self.registration.scope + 'ping' })
-
-  // Mistage adding this and have streamsaver.js rely on it
-  // depricated as from 0.2.1
-  port.postMessage({ debug: 'Mocking a download request' })
 }
 
 function createStream (port) {
@@ -78,4 +75,6 @@ self.onfetch = event => {
   if (data.size) headers['Content-Length'] = data.size
 
   event.respondWith(new Response(stream, { headers }))
+
+  stream.port.postMessage({ debug: 'Download started' })
 }
