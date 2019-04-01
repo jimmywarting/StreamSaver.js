@@ -19,7 +19,6 @@
                  location.hostname === 'localhost'
   let iframe
   let loaded
-  let transferableTransformStream
   let streamSaver = {
     createWriteStream,
     writableStream: window.WritableStream ||
@@ -44,12 +43,15 @@
   } catch (err) {}
 
   try {
-    const { readable } = new TransformStream()
+    let transformStream = window.TransformStream ||
+                          window.WebStreamsPolyfill &&
+                          WebStreamsPolyfill.TransformStream
+    const { readable } = new transformStream()
     const mc = new MessageChannel()
     mc.port1.postMessage(readable, [readable])
     mc.port1.close()
     mc.port2.close()
-    transferableTransformStream = readable.locked === true ? TransformStream : 0
+    streamSaver.transformStream = readable.locked === true ? transformStream : 0
   } catch (err) {
     // Was first enabled in chrome v73 behind a flag
   }
@@ -167,7 +169,7 @@
       if (secure) {
         return iframePostMessage(streamSaver.mitm, args)
       }
-      if (!hash && mozExtension && !transferableTransformStream) {
+      if (!hash && mozExtension && !streamSaver.transformStream) {
         hash = '#' + Math.random()
       }
       popup = load(streamSaver.mitm + hash, !hash, 1)
@@ -191,8 +193,8 @@
       }
     })
 
-    if (transferableTransformStream) {
-      const ts = new transferableTransformStream({
+    if (streamSaver.transformStream) {
+      const ts = new streamSaver.transformStream({
         start () {
           return new Promise(resolve =>
             setTimeout(() => setupChannel(ts.readable).then(resolve))
