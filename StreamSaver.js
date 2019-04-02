@@ -38,14 +38,25 @@
   } catch (err) {}
 
   try {
+    // Transfariable stream was first enabled in chrome v73 behind a flag
     const { readable } = new TransformStream()
     const mc = new MessageChannel()
     mc.port1.postMessage(readable, [readable])
     mc.port1.close()
     mc.port2.close()
-    streamSaver.TransformStream = readable.locked === true ? TransformStream : 0
+    // Freeze TransformStream object (can only work with native)
+    Object.defineProperty(streamSaver, 'TransformStream', {
+      configurable: false,
+      writable: false,
+      value: TransformStream
+    })
   } catch (err) {
-    // Was first enabled in chrome v73 behind a flag
+    // Never allow setting TransformStream property on streamsaver
+    Object.defineProperty(streamSaver, 'TransformStream', {
+      configurable: false,
+      writable: false,
+      value: null
+    })
   }
 
   function iframePostMessage(url, args) {
