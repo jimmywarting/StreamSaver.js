@@ -21,15 +21,10 @@
   let loaded
   let streamSaver = {
     createWriteStream,
-    writableStream: window.WritableStream ||
+    WritableStream: window.WritableStream ||
                     window.WebStreamsPolyfill && WebStreamsPolyfill.WritableStream,
     supported: false,
-    version: {
-      full: '1.2.0',
-      major: 1,
-      minor: 2,
-      dot: 0
-    }
+    version: { full: '1.2.0', major: 1, minor: 2, dot: 0 }
   }
 
   streamSaver.mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
@@ -43,15 +38,12 @@
   } catch (err) {}
 
   try {
-    let transformStream = window.TransformStream ||
-                          window.WebStreamsPolyfill &&
-                          WebStreamsPolyfill.TransformStream
-    const { readable } = new transformStream()
+    const { readable } = new TransformStream()
     const mc = new MessageChannel()
     mc.port1.postMessage(readable, [readable])
     mc.port1.close()
     mc.port2.close()
-    streamSaver.transformStream = readable.locked === true ? transformStream : 0
+    streamSaver.TransformStream = readable.locked === true ? TransformStream : 0
   } catch (err) {
     // Was first enabled in chrome v73 behind a flag
   }
@@ -193,8 +185,8 @@
       }
     })
 
-    if (streamSaver.transformStream) {
-      const ts = new streamSaver.transformStream({
+    if (streamSaver.TransformStream) {
+      const ts = new streamSaver.TransformStream({
         start () {
           return new Promise(resolve =>
             setTimeout(() => setupChannel(ts.readable).then(resolve))
@@ -205,7 +197,7 @@
       return ts.writable
     }
 
-    return new streamSaver.writableStream({
+    return new streamSaver.WritableStream({
       start () {
         // is called immediately, and should perform any actions
         // necessary to acquire access to the underlying sink.
