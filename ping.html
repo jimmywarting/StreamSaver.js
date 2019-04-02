@@ -6,7 +6,7 @@
   to do the pinging. The Shared Worker stays alive until this iframe is closed.
 -->
 <script>
-let ping = new SharedWorker('ping.js')
+const ping = new SharedWorker('ping.js')
 
 window.onmessage = event => ping.port.postMessage(event.data, event.ports)
 </script>

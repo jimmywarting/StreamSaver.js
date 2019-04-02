@@ -1,4 +1,5 @@
-/* global location WritableStream ReadableStream define MouseEvent MessageChannel TransformStream */
+/* global chrome location ReadableStream define MessageChannel TransformStream */
+
 ;((name, definition) => {
   typeof module !== 'undefined'
     ? module.exports = definition()
@@ -8,29 +9,26 @@
 })('streamSaver', () => {
   'use strict'
 
-  const firefox = navigator.userAgent.indexOf('Firefox') !== -1
+  const firefox = 'MozAppearance' in document.documentElement.style
   const mozExtension = location.protocol === 'moz-extension:'
   const background = window.chrome && chrome.extension &&
                      chrome.extension.getBackgroundPage &&
                      chrome.extension.getBackgroundPage() === window
   const secure = location.protocol === 'https:' ||
                  location.protocol === 'chrome-extension:' ||
-                 mozExtension && !background ||
+                 (mozExtension && !background) ||
                  location.hostname === 'localhost'
   let iframe
   let loaded
-  let streamSaver = {
+  const ponyfill = window.WebStreamsPolyfill || {}
+  const streamSaver = {
     createWriteStream,
-    WritableStream: window.WritableStream ||
-                    window.WebStreamsPolyfill && WebStreamsPolyfill.WritableStream,
+    WritableStream: window.WritableStream || ponyfill.WritableStream,
     supported: false,
-    version: { full: '1.2.0', major: 1, minor: 2, dot: 0 }
+    version: { full: '1.2.0', major: 1, minor: 2, dot: 0 },
+    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=1.2.0',
+    ping: 'https://jimmywarting.github.io/StreamSaver.js/ping.html?version=1.2.0'
   }
-
-  streamSaver.mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
-    streamSaver.version.full
-  streamSaver.ping = 'https://jimmywarting.github.io/StreamSaver.js/ping.html?version=' +
-    streamSaver.version.full
 
   try {
     // Some browser has it but ain't allowed to construct a stream yet
@@ -50,16 +48,9 @@
       writable: false,
       value: TransformStream
     })
-  } catch (err) {
-    // Never allow setting TransformStream property on streamsaver
-    Object.defineProperty(streamSaver, 'TransformStream', {
-      configurable: false,
-      writable: false,
-      value: null
-    })
-  }
+  } catch (err) {}
 
-  function iframePostMessage(url, args) {
+  function iframePostMessage (url, args) {
     if (!iframe) {
       iframe = document.createElement('iframe')
       iframe.hidden = true
@@ -78,17 +69,18 @@
     }
   }
 
-  function load(url, noTabs, popUp) {
-    let popup = { close: () => popup.closed = 1, fns: [], onLoad: fn => popup.fns.push(fn) }
+  function load (url, noTabs, popUp) {
+    let popup = { close: () => (popup.closed = 1), fns: [], onLoad: fn => popup.fns.push(fn) }
     if (!noTabs && window.chrome && chrome.tabs && chrome.tabs.create) {
       chrome.tabs.create({ url: url, active: false }, popup2 => {
         popup.close = () => chrome.tabs.remove(popup2.id)
+
         if (popup.closed) {
           popup.close()
         } else {
           let fn
           chrome.tabs.onUpdated.addListener(fn = (tabId, changeInfo, tab) => {
-            if (tabId == popup2.id && tab.status == "complete") {
+            if (tabId === popup2.id && tab.status === 'complete') {
               chrome.tabs.onUpdated.removeListener(fn)
               popup.onLoad = fn => fn()
               popup.fns.forEach(popup.onLoad)
@@ -101,18 +93,16 @@
         popup = window.open(url, Math.random())
       } else {
         if (mozExtension || background) {
-          let iframe2 = document.createElement('iframe')
-          iframe2.hidden = true
-          document.body.appendChild(iframe2)
-          iframe2.src = url
-          popup.close = () => document.body.removeChild(iframe2)
+          const iframe = document.createElement('iframe')
+          iframe.hidden = true
+          document.body.appendChild(iframe)
+          iframe.src = url
+          popup.close = () => iframe.remove()
         } else {
           if (iframe && !loaded) {
-            let fn2
-            iframe.addEventListener('load', fn2 = () => {
-              iframe.removeEventListener('load', fn2)
+            iframe.addEventListener('load', () => {
               window.location = url
-            })
+            }, { once: true })
           } else {
             window.location = url
           }
