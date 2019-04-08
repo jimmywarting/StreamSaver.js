@@ -17,7 +17,7 @@ self.onconnect = function (evt) {
         entry[0].postMessage(data, ports)
       } else {
         if (entry) {
-          evt.ports[0].postMessage(entry[1], [ entry[0] ])
+          ports[0].postMessage(entry[1], [ entry[0] ])
         }
         map.set(data.hash, [ ports[0], data ])
       }
