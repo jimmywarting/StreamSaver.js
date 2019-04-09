@@ -10,6 +10,7 @@
   'use strict'
 
   let iframe, background
+  const test = fn => { try { fn() } catch (e) {} }
   const ponyfill = window.WebStreamsPolyfill || {}
   const once = { once: true }
   const isSecureContext = window.isSecureContext
@@ -35,16 +36,16 @@
     return iframe
   }
 
-  try {
+  test(() => {
     background = chrome.extension.getBackgroundPage() === window
-  } catch (err) {}
+  })
 
-  try {
+  test(() => {
     // Some browser has it but ain't allowed to construct a stream yet
     streamSaver.supported = 'serviceWorker' in navigator && !!new ReadableStream()
-  } catch (err) {}
+  })
 
-  try {
+  test(() => {
     // Transfariable stream was first enabled in chrome v73 behind a flag
     const { readable } = new TransformStream()
     const mc = new MessageChannel()
@@ -57,7 +58,7 @@
       writable: false,
       value: TransformStream
     })
-  } catch (err) {}
+  })
 
   function iframePostMessage (url, args) {
     iframe = iframe || makeIframe(url)
