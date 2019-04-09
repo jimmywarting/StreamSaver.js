@@ -73,9 +73,9 @@
       permission,
       writer,
       url = "https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4",
-      fileStream = streamSaver.createWriteStream(filename)
+      fileStream = kind !== 'torrent' && streamSaver.createWriteStream(filename)
 
-      writer = fileStream.getWriter()
+      writer = kind !== 'torrent' && fileStream.getWriter()
       $abort.onclick = event => writer.abort()
       $close.onclick = event => writer.close()
 
@@ -170,8 +170,8 @@
             })
 
             const file = torrent.files[5]
-            let myFile = streamSaver.createWriteStream(file.name, file.length)
-            let writer = myFile.getWriter()
+            fileStream = streamSaver.createWriteStream(file.name, file.length)
+            writer = fileStream.getWriter()
 
             file.createReadStream()
             .on('data', data => writer.write(data))
@@ -192,7 +192,7 @@
             mediaRecorder.stop()
             setTimeout(()=>{
               chunks.then(evt => {
-                myFile.close()
+                fileStream.close()
               })
             }, 1000)
           }
