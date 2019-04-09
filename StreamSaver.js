@@ -13,7 +13,6 @@
   const test = fn => { try { fn() } catch (e) {} }
   const ponyfill = window.WebStreamsPolyfill || {}
   const once = { once: true }
-  const isSecureContext = window.isSecureContext
   const firefox = 'MozAppearance' in document.documentElement.style
   const mozExtension = location.protocol === 'moz-extension:'
   const streamSaver = {
@@ -60,6 +59,8 @@
     })
   })
 
+  const isSecureContext = window.isSecureContext && (!firefox || !background)
+
   function iframePostMessage (url, args) {
     iframe = iframe || makeIframe(url)
     if (iframe.loaded) {
@@ -94,15 +95,7 @@
       if (popUp) {
         popup = window.open(url, Math.random())
       } else {
-        if (mozExtension || background) {
-          popup.close = (x => () => x.remove())(makeIframe(url))
-        } else {
-          if (iframe && !iframe.loaded) {
-            iframe.addEventListener('load', makeIframe.bind(null, url), once)
-          } else {
-            makeIframe(url)
-          }
-        }
+        popup.close = (x => () => x.remove())(makeIframe(url))
       }
     }
     return popup
