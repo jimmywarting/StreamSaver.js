@@ -1,5 +1,13 @@
 /* global self ReadableStream Response */
 
+self.addEventListener('install', () => {
+  self.skipWaiting()
+})
+
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim())
+})
+
 const map = new Map()
 
 // This should be called once per download
