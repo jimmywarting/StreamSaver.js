@@ -111,12 +111,14 @@
     let popup
     let hash = ''
     let setupChannel = readableStream => new Promise(resolve => {
-      const args = [ { filename, size }, '*', [ channel.port2 ] ]
+      const transferable = [ channel.port2 ]
+      const request = { filename, size }
+      const args = [ request, '*', transferable ]
 
       // Pass along transfarable stream
       if (readableStream) {
-        args[0].readableStream = readableStream
-        args[2].push(readableStream)
+        channel.port1.postMessage({ readableStream }, [ readableStream ])
+        request.transferringReadable = true
       }
 
       channel.port1.onmessage = evt => {
@@ -135,6 +137,7 @@
           // Cleanup
           if (readableStream) {
             // We don't need postMessages now when stream are transferable
+            channel.port1.onmessage = null
             channel.port1.close()
             channel.port2.close()
           }

@@ -22,10 +22,24 @@ self.onmessage = event => {
   // Create a uniq link for the download
   const uniqLink = self.registration.scope + 'intercept-me-nr' + Math.random()
   const port = event.ports[0]
+  const metadata = new Array(3) // [stream, data, port]
 
-  const stream = event.data.readableStream || createStream(port)
-  stream.port = port
-  map.set(uniqLink, [stream, event.data])
+  metadata[1] = event.data
+
+  if (event.data.transferringReadable) {
+    port.onmessage = evt => {
+      port.onmessage = null
+      metadata[0] = evt.data.readableStream
+    }
+  } else {
+    // Note to self:
+    // old streamsaver version might still use this...
+    // but v1.2.0+ will always transfer the stream throught MessageChannel #94
+    metadata[0] = event.data.readableStream || createStream(port)
+    metadata[2] = port
+  }
+
+  map.set(uniqLink, metadata)
   port.postMessage({ download: uniqLink, ping: self.registration.scope + 'ping' })
 }
 
@@ -66,7 +80,7 @@ self.onfetch = event => {
 
   if (!hijacke) return null
 
-  const [stream, data] = hijacke
+  const [ stream, data, port ] = hijacke
 
   map.delete(url)
 
@@ -84,5 +98,5 @@ self.onfetch = event => {
 
   event.respondWith(new Response(stream, { headers }))
 
-  stream.port.postMessage({ debug: 'Download started' })
+  port && port.postMessage({ debug: 'Download started' })
 }
