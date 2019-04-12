@@ -1,26 +1,26 @@
-
+/* global self */
 const map = new Map()
 
-onconnect = function(e) {
-  let port = e.ports[0]
+self.onconnect = function (evt) {
+  let port = evt.ports[0]
 
-  port.onmessage = function(e) {
-    if (e.data.ping) {
-      let keepAlive = () => fetch(e.data.ping)
-      setInterval(keepAlive, 29E3)
+  port.onmessage = function ({ data, ports }) {
+    if (data.ping) {
+      const keepAlive = () => self.fetch(data.ping)
+      setInterval(keepAlive, 28E3)
       keepAlive()
     }
-    if (e.data.hash) {
-      let entry = map.get(e.data.hash)
+
+    if (data.hash) {
+      const entry = map.get(data.hash)
       if (entry && entry[1].ping) {
-        entry[0].postMessage(e.data, e.ports)
+        entry[0].postMessage(data, ports)
       } else {
         if (entry) {
-          e.ports[0].postMessage(entry[1], [ entry[0] ])
+          ports[0].postMessage(entry[1], [ entry[0] ])
         }
-        map.set(e.data.hash, [ e.ports[0], e.data ])
+        map.set(data.hash, [ ports[0], data ])
       }
     }
   }
-
 }

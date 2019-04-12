@@ -1,4 +1,5 @@
-/* global location WritableStream ReadableStream define MouseEvent MessageChannel TransformStream */
+/* global chrome location ReadableStream define MessageChannel TransformStream */
+
 ;((name, definition) => {
   typeof module !== 'undefined'
     ? module.exports = definition()
@@ -8,84 +9,81 @@
 })('streamSaver', () => {
   'use strict'
 
-  const firefox = navigator.userAgent.indexOf('Firefox') !== -1
+  let iframe, background
+  const test = fn => { try { fn() } catch (e) {} }
+  const ponyfill = window.WebStreamsPolyfill || {}
+  const once = { once: true }
+  const firefox = 'MozAppearance' in document.documentElement.style
   const mozExtension = location.protocol === 'moz-extension:'
-  const background = window.chrome && chrome.extension &&
-                     chrome.extension.getBackgroundPage &&
-                     chrome.extension.getBackgroundPage() === window
-  const secure = location.protocol === 'https:' ||
-                 location.protocol === 'chrome-extension:' ||
-                 mozExtension && !background ||
-                 location.hostname === 'localhost'
-  let iframe
-  let loaded
-  let streamSaver = {
+  const streamSaver = {
     createWriteStream,
-    writableStream: window.WritableStream ||
-                    window.WebStreamsPolyfill && WebStreamsPolyfill.WritableStream,
+    WritableStream: window.WritableStream || ponyfill.WritableStream,
     supported: false,
-    version: {
-      full: '1.2.0',
-      major: 1,
-      minor: 2,
-      dot: 0
-    }
+    version: { full: '1.2.0', major: 1, minor: 2, dot: 0 },
+    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=1.2.0',
+    ping: 'https://jimmywarting.github.io/StreamSaver.js/ping.html?version=1.2.0'
   }
 
-  streamSaver.mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
-    streamSaver.version.full
-  streamSaver.ping = 'https://jimmywarting.github.io/StreamSaver.js/ping.html?version=' +
-    streamSaver.version.full
+  function makeIframe (src) {
+    const iframe = document.createElement('iframe')
+    iframe.hidden = true
+    iframe.src = src
+    iframe.addEventListener('load', () => {
+      iframe.loaded = true
+    }, once)
+    document.body.appendChild(iframe)
+    return iframe
+  }
 
-  try {
+  test(() => {
+    background = chrome.extension.getBackgroundPage() === window
+  })
+
+  test(() => {
     // Some browser has it but ain't allowed to construct a stream yet
     streamSaver.supported = 'serviceWorker' in navigator && !!new ReadableStream()
-  } catch (err) {}
+  })
 
-  try {
-    let transformStream = window.TransformStream ||
-                          window.WebStreamsPolyfill &&
-                          WebStreamsPolyfill.TransformStream
-    const { readable } = new transformStream()
+  test(() => {
+    // Transfariable stream was first enabled in chrome v73 behind a flag
+    const { readable } = new TransformStream()
     const mc = new MessageChannel()
     mc.port1.postMessage(readable, [readable])
     mc.port1.close()
     mc.port2.close()
-    streamSaver.transformStream = readable.locked === true ? transformStream : 0
-  } catch (err) {
-    // Was first enabled in chrome v73 behind a flag
-  }
+    // Freeze TransformStream object (can only work with native)
+    Object.defineProperty(streamSaver, 'TransformStream', {
+      configurable: false,
+      writable: false,
+      value: TransformStream
+    })
+  })
 
-  function iframePostMessage(url, args) {
-    if (!iframe) {
-      iframe = document.createElement('iframe')
-      iframe.hidden = true
-      document.body.appendChild(iframe)
-      iframe.src = url
-    }
-    if (!loaded) {
-      let fn2
-      iframe.addEventListener('load', fn2 = () => {
-        loaded = true
-        iframe.removeEventListener('load', fn2)
-        iframe.contentWindow.postMessage(...args)
-      })
-    } else {
+  const isSecureContext = window.isSecureContext && (!firefox || !background)
+
+  function iframePostMessage (url, args) {
+    iframe = iframe || makeIframe(url)
+    if (iframe.loaded) {
       iframe.contentWindow.postMessage(...args)
+    } else {
+      iframe.addEventListener('load', () => {
+        iframe.contentWindow.postMessage(...args)
+      }, once)
     }
   }
 
-  function load(url, noTabs, popUp) {
-    let popup = { close: () => popup.closed = 1, fns: [], onLoad: fn => popup.fns.push(fn) }
+  function load (url, noTabs, popUp) {
+    let popup = { close: () => (popup.closed = 1), fns: [], onLoad: fn => popup.fns.push(fn) }
     if (!noTabs && window.chrome && chrome.tabs && chrome.tabs.create) {
       chrome.tabs.create({ url: url, active: false }, popup2 => {
         popup.close = () => chrome.tabs.remove(popup2.id)
+
         if (popup.closed) {
           popup.close()
         } else {
           let fn
-          chrome.tabs.onUpdated.addListener(fn = (tabId, changeInfo, tab) => {
-            if (tabId == popup2.id && tab.status == "complete") {
+          chrome.tabs.onUpdated.addListener(fn = (tabId, _, tab) => {
+            if (tabId === popup2.id && tab.status === 'complete') {
               chrome.tabs.onUpdated.removeListener(fn)
               popup.onLoad = fn => fn()
               popup.fns.forEach(popup.onLoad)
@@ -97,23 +95,7 @@
       if (popUp) {
         popup = window.open(url, Math.random())
       } else {
-        if (mozExtension || background) {
-          let iframe2 = document.createElement('iframe')
-          iframe2.hidden = true
-          document.body.appendChild(iframe2)
-          iframe2.src = url
-          popup.close = () => document.body.removeChild(iframe2)
-        } else {
-          if (iframe && !loaded) {
-            let fn2
-            iframe.addEventListener('load', fn2 = () => {
-              iframe.removeEventListener('load', fn2)
-              window.location = url
-            })
-          } else {
-            window.location = url
-          }
-        }
+        popup.close = (x => () => x.remove())(makeIframe(url))
       }
     }
     return popup
@@ -148,7 +130,7 @@
             }
             popup.close() // don't need the popup any longer
           }
-          popup = load(evt.data.download, secure)
+          popup = load(evt.data.download, isSecureContext)
 
           // Cleanup
           if (readableStream) {
@@ -159,20 +141,20 @@
         } else {
           if (popup) {
             if (firefox) popup.close()
-            popup = 0
+            popup = null
           }
 
           channel.port1.onmessage = null
         }
       }
 
-      if (secure) {
+      if (isSecureContext) {
         return iframePostMessage(streamSaver.mitm, args)
       }
       if (!hash && mozExtension && !streamSaver.transformStream) {
         hash = '#' + Math.random()
       }
-      popup = load(streamSaver.mitm + hash, !hash, 1)
+      popup = load(streamSaver.mitm + hash, !hash, true)
       if (popup.postMessage) {
         let onready = evt => {
           if (evt.source === popup) {
@@ -193,8 +175,8 @@
       }
     })
 
-    if (streamSaver.transformStream) {
-      const ts = new streamSaver.transformStream({
+    if (streamSaver.TransformStream) {
+      const ts = new streamSaver.TransformStream({
         start () {
           return new Promise(resolve =>
             setTimeout(() => setupChannel(ts.readable).then(resolve))
@@ -205,7 +187,7 @@
       return ts.writable
     }
 
-    return new streamSaver.writableStream({
+    return new streamSaver.WritableStream({
       start () {
         // is called immediately, and should perform any actions
         // necessary to acquire access to the underlying sink.
