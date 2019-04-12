@@ -7,7 +7,7 @@ self.onconnect = function (evt) {
   port.onmessage = function ({ data, ports }) {
     if (data.ping) {
       const keepAlive = () => self.fetch(data.ping)
-      setInterval(keepAlive, 28E3)
+      setInterval(keepAlive, 10E3)
       keepAlive()
     }
 

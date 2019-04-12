@@ -33,8 +33,8 @@ let keepAlive = sw => {
   }
   setInterval(() => {
     sw.postMessage('ping', [new MessageChannel().port2])
-  }, navigator.userAgent.indexOf('Firefox') !== -1 ? 29E3 : 27E4)
-  // 29sec on Firefox, 4.5min everywhere else
+  }, 'MozAppearance' in document.documentElement.style ? 10E3 : 27E4)
+  // 10sec on Firefox, 4.5min everywhere else
 }
 
 // message event is the first thing we need to setup a listner for
