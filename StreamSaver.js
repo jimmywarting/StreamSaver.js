@@ -1,4 +1,5 @@
-/* global location WritableStream ReadableStream define MouseEvent MessageChannel TransformStream */
+/* global chrome location ReadableStream define MessageChannel TransformStream */
+
 ;((name, definition) => {
   typeof module !== 'undefined'
     ? module.exports = definition()
@@ -8,40 +9,96 @@
 })('streamSaver', () => {
   'use strict'
 
-  const secure = location.protocol === 'https:' ||
-                 location.protocol === 'chrome-extension:' ||
-                 location.hostname === 'localhost'
-  let iframe
-  let loaded
-  let transfarableSupport = false
-  let streamSaver = {
+  let iframe, background
+  const test = fn => { try { fn() } catch (e) {} }
+  const ponyfill = window.WebStreamsPolyfill || {}
+  const once = { once: true }
+  const firefox = 'MozAppearance' in document.documentElement.style
+  const mozExtension = location.protocol === 'moz-extension:'
+  const streamSaver = {
     createWriteStream,
+    WritableStream: window.WritableStream || ponyfill.WritableStream,
     supported: false,
-    version: {
-      full: '1.2.0',
-      major: 1,
-      minor: 2,
-      dot: 0
-    }
+    version: { full: '1.2.0', major: 1, minor: 2, dot: 0 },
+    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=1.2.0',
+    ping: 'https://jimmywarting.github.io/StreamSaver.js/ping.html?version=1.2.0'
   }
 
-  streamSaver.mitm = 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=' +
-    streamSaver.version.full
+  function makeIframe (src) {
+    const iframe = document.createElement('iframe')
+    iframe.hidden = true
+    iframe.src = src
+    iframe.addEventListener('load', () => {
+      iframe.loaded = true
+    }, once)
+    document.body.appendChild(iframe)
+    return iframe
+  }
 
-  try {
+  test(() => {
+    background = chrome.extension.getBackgroundPage() === window
+  })
+
+  test(() => {
     // Some browser has it but ain't allowed to construct a stream yet
     streamSaver.supported = 'serviceWorker' in navigator && !!new ReadableStream()
-  } catch (err) {}
+  })
 
-  try {
+  test(() => {
+    // Transfariable stream was first enabled in chrome v73 behind a flag
     const { readable } = new TransformStream()
     const mc = new MessageChannel()
     mc.port1.postMessage(readable, [readable])
     mc.port1.close()
     mc.port2.close()
-    transfarableSupport = readable.locked === true
-  } catch (err) {
-    // Was first enabled in chrome v73
+    // Freeze TransformStream object (can only work with native)
+    Object.defineProperty(streamSaver, 'TransformStream', {
+      configurable: false,
+      writable: false,
+      value: TransformStream
+    })
+  })
+
+  const isSecureContext = window.isSecureContext && (!firefox || !background)
+
+  function iframePostMessage (url, args) {
+    iframe = iframe || makeIframe(url)
+    if (iframe.loaded) {
+      iframe.contentWindow.postMessage(...args)
+    } else {
+      iframe.addEventListener('load', () => {
+        iframe.contentWindow.postMessage(...args)
+      }, once)
+    }
+  }
+
+  function load (url, noTabs, popUp) {
+    let popup = { close: () => (popup.closed = 1), fns: [], onLoad: fn => popup.fns.push(fn) }
+    if (!noTabs && window.chrome && chrome.tabs && chrome.tabs.create) {
+      chrome.tabs.create({ url: url, active: false }, popup2 => {
+        popup.close = () => chrome.tabs.remove(popup2.id)
+
+        if (popup.closed) {
+          popup.close()
+        } else {
+          let fn
+          chrome.tabs.onUpdated.addListener(fn = (tabId, _, tab) => {
+            if (tabId === popup2.id && tab.status === 'complete') {
+              chrome.tabs.onUpdated.removeListener(fn)
+              popup.onLoad = fn => fn()
+              popup.fns.forEach(popup.onLoad)
+            }
+          })
+        }
+      })
+    } else {
+      if (popUp || !firefox && !isSecureContext) {
+        popup = window.open(url, Math.random())
+      } else {
+        popup.close = (x => () => x.remove())(makeIframe(url))
+      }
+    }
+    return popup
   }
 
   function createWriteStream (filename, queuingStrategy, size) {
@@ -52,6 +109,7 @@
 
     let channel = new MessageChannel()
     let popup
+    let hash = ''
     let setupChannel = readableStream => new Promise(resolve => {
       const args = [ { filename, size }, '*', [ channel.port2 ] ]
 
@@ -66,14 +124,13 @@
         // we recive the readable link (stream)
         if (evt.data.download) {
           resolve() // Signal that the writestream are ready to recive data
-          if (!secure) popup.close() // don't need the popup any longer
-          if (window.chrome && chrome.extension &&
-              chrome.extension.getBackgroundPage &&
-              chrome.extension.getBackgroundPage() === window) {
-            chrome.tabs.create({ url: evt.data.download, active: false })
-          } else {
-            window.location = evt.data.download
+          if (popup) {
+            if (!hash && !iframe && firefox) {
+              iframePostMessage(streamSaver.ping, [evt.data, '*'])
+            }
+            popup.close() // don't need the popup any longer
           }
+          popup = load(evt.data.download, isSecureContext)
 
           // Cleanup
           if (readableStream) {
@@ -81,33 +138,24 @@
             channel.port1.close()
             channel.port2.close()
           }
+        } else {
+          if (popup) {
+            if (firefox) popup.close()
+            popup = null
+          }
 
           channel.port1.onmessage = null
         }
       }
 
-      if (secure && !iframe) {
-        iframe = document.createElement('iframe')
-        iframe.src = streamSaver.mitm
-        iframe.hidden = true
-        document.body.appendChild(iframe)
+      if (isSecureContext) {
+        return iframePostMessage(streamSaver.mitm, args)
       }
-
-      if (secure && !loaded) {
-        let fn
-        iframe.addEventListener('load', fn = () => {
-          loaded = true
-          iframe.removeEventListener('load', fn)
-          iframe.contentWindow.postMessage(...args)
-        })
+      if (!hash && mozExtension && !streamSaver.transformStream) {
+        hash = '#' + Math.random()
       }
-
-      if (secure && loaded) {
-        iframe.contentWindow.postMessage(...args)
-      }
-
-      if (!secure) {
-        popup = window.open(streamSaver.mitm, Math.random())
+      popup = load(streamSaver.mitm + hash, !hash, true)
+      if (popup.postMessage) {
         let onready = evt => {
           if (evt.source === popup) {
             popup.postMessage(...args)
@@ -119,11 +167,16 @@
         // so popup.onload() don't work but postMessage still dose
         // work cross origin
         window.addEventListener('message', onready)
+      } else {
+        popup.onLoad(() => {
+          args[0].hash = hash
+          iframePostMessage(streamSaver.ping, args)
+        })
       }
     })
 
-    if (transfarableSupport) {
-      const ts = new TransformStream({
+    if (streamSaver.TransformStream) {
+      const ts = new streamSaver.TransformStream({
         start () {
           return new Promise(resolve =>
             setTimeout(() => setupChannel(ts.readable).then(resolve))
@@ -134,7 +187,7 @@
       return ts.writable
     }
 
-    return new WritableStream({
+    return new streamSaver.WritableStream({
       start () {
         // is called immediately, and should perform any actions
         // necessary to acquire access to the underlying sink.

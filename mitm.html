@@ -12,7 +12,7 @@
 	to open up a link that will start the download
 -->
 <script>
-let host = 'jimmywarting.github.io'
+const host = 'jimmywarting.github.io'
 
 // Service worker only works on https, 127.0.0.1 and localhost
 // So we just redirect asap
@@ -21,35 +21,65 @@ if (window.location.host === host && window.location.protocol !== 'https:') { wi
 // This will prevent the sw from restarting
 let keepAlive = sw => {
   keepAlive = () => {}
+  if (window.location.hash) {
+    let channel = new MessageChannel
+    channel.port1.onmessage = evt => {
+      sw.postMessage(evt.data, evt.ports)
+    }
+    new SharedWorker('ping.js').port.postMessage({
+      hash: window.location.hash,
+      ping: sw.scriptURL.substr(0, sw.scriptURL.length - 5) + 'ping'
+    }, [channel.port2])
+  }
   setInterval(() => {
     sw.postMessage('ping', [new MessageChannel().port2])
-  }, 29E3) // 29sec
+  }, 'MozAppearance' in document.documentElement.style ? 10E3 : 27E4)
+  // 10sec on Firefox, 4.5min everywhere else
 }
 
 // message event is the first thing we need to setup a listner for
 // don't want the opener to do a random timeout - instead they can listen for
 // the ready event
-window.onmessage = event => {
-  let { data, ports } = event
+// but since we need to wait for the Service Worker registration, we store the
+// message for later
+let messages = []
+window.onmessage = evt => messages.push(evt)
 
-  // It's important to have a messageChannel, don't want to interfere
-  // with other simultaneous downloads
-  if (!ports || !ports.length) { throw new TypeError("Mehhh! You didn't send a messageChannel") }
+// Register the worker, then forward the dataChannel to the worker
+// So they can talk directly, so we don't have to be "the middle man" any
+// longer
+navigator.serviceWorker.getRegistration('./').then(swReg => {
+  return swReg || navigator.serviceWorker.register('sw.js', { scope: './' })
+}).then(swReg => {
+  const swRegTmp = swReg.installing || swReg.waiting
 
-  // Register the worker, then forward the dataChannel to the worker
-  // So they can talk directly, so we don't have to be "the middle man" any
-  // longer
-  navigator.serviceWorker.getRegistration('./').then(swReg => {
-    return swReg || navigator.serviceWorker.register('sw.js', { scope: './' })
-  }).then(swReg => {
+  // As soon as the Service Worker is registered we start pinging it to keep
+  // it alive
+  if (swReg.active) {
+    keepAlive(swReg.active)
+  } else {
+    let fn
+    swRegTmp.addEventListener('statechange', fn = () => {
+      if (swRegTmp.state === 'activated') {
+        swRegTmp.removeEventListener('statechange', fn)
+        keepAlive(swReg.active)
+      }
+    })
+  }
+
+  // Now that we have the Service Worker registered we can process messages
+  window.onmessage = event => {
+    let { data, ports } = event
+
+    // It's important to have a messageChannel, don't want to interfere
+    // with other simultaneous downloads
+    if (!ports || !ports.length) { throw new TypeError("Mehhh! You didn't send a messageChannel") }
+
     // This sends the message data as well as transferring
     // messageChannel.port2 to the service worker. The service worker can
     // then use the transferred port to reply via postMessage(), which
     // will in turn trigger the onmessage handler on messageChannel.port1.
-    const swRegTmp = swReg.installing || swReg.waiting
-
     if (swReg.active) {
-      keepAlive(swReg.active)
       return swReg.active.postMessage(
         data,
         data.readableStream
@@ -58,20 +88,21 @@ window.onmessage = event => {
         )
     }
 
-    swRegTmp.onstatechange = () => {
+    let fn
+    swRegTmp.addEventListener('statechange', fn = () => {
       if (swRegTmp.state === 'activated') {
-        swRegTmp.onstatechange = null
+        swRegTmp.removeEventListener('statechange', fn)
         swReg.active.postMessage(
           data,
           data.readableStream
             ? [ ports[0], data.readableStream ]
             : [ ports[0] ]
           )
-        keepAlive(swReg.active)
       }
-    }
-  })
-}
+    })
+  }
+  messages.forEach(window.onmessage)
+})
 
 // The opener can't listen to onload event, so we need to help em out!
 // (telling them that we are ready to accept postMessage's)
