@@ -92,7 +92,7 @@
         }
       })
     } else {
-      if (popUp) {
+      if (popUp || !firefox && !isSecureContext) {
         popup = window.open(url, Math.random())
       } else {
         popup.close = (x => () => x.remove())(makeIframe(url))
