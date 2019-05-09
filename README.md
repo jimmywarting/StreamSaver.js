@@ -223,12 +223,6 @@ python -m SimpleHTTPServer 3001
 # then open localhost:3001/example.html
 ```
 
-Consensus
-=========
-Go ahead and vote for how important this feature is
-
-- [serviceWorker][17] MS Edge status: In Development
-- [streams][18] Firefox Status: ASSIGNED
 
 [1]: https://github.com/eligrey
 [2]: https://github.com/eligrey/FileSaver.js
@@ -246,8 +240,6 @@ Go ahead and vote for how important this feature is
 [14]: https://streams.spec.whatwg.org/#rs-class
 [15]: https://www.npmjs.com/package/@mattiasbuelens/web-streams-polyfill
 [16]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/fetchapi
-[17]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/serviceworker
-[18]: https://bugzilla.mozilla.org/show_bug.cgi?id=1128959
 [19]: https://webtorrent.io
 [npm-image]: https://img.shields.io/npm/v/streamsaver.svg?style=flat-square
 [npm-url]: https://www.npmjs.com/package/streamsaver
