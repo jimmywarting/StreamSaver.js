@@ -97,8 +97,8 @@ writer.close()
 
 ```javascript
 require('screw-filereader') // optional in chrome v76, streams exist native on blobs now!
-const fileStream = streamSaver.createWriteStream('filename.txt')
 const blob = new Blob([ 'a'.repeat(1E9*5) ]) // 1*5 MB
+const fileStream = streamSaver.createWriteStream('filename.txt', blob.size)
 
 blob.stream().pipeTo(fileStream)
 ```
@@ -108,7 +108,6 @@ blob.stream().pipeTo(fileStream)
 
 ```javascript
 get_user_media_stream_somehow().then(mediaStream => {
-	let fr = new FileReader
 	let mediaRecorder = new MediaRecorder(mediaStream)
 	let chunks = Promise.resolve()
 	let fileStream = streamSaver.createWriteStream('filename.mp4')
@@ -125,14 +124,10 @@ get_user_media_stream_somehow().then(mediaStream => {
 		, 1000)
 	}
 
-	mediaRecorder.ondataavailable = ({blob}) => {
-		chunks = chunks.then(() => new Promise(resolve => {
-			fr.onload = () => {
-				writer.write(new Uint8Array(fr.result))
-				resolve()
-			}
-			fr.readAsArrayBuffer(blob)
-		}))
+	mediaRecorder.ondataavailable = ({ blob }) => {
+		chunks = chunks.then(() => blob.arrayBuffer().then(buf => 
+			writer.write(new Uint8Array(buf))
+		))
 	}
 
 })
