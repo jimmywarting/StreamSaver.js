@@ -96,7 +96,7 @@ writer.close()
 ### Read blob as a stream and pipe it (see: [Screw FileReader](https://www.npmjs.com/package/screw-filereader))
 
 ```javascript
-require('screw-filereader')
+require('screw-filereader') // optional in chrome v76, streams exist native on blobs now!
 const fileStream = streamSaver.createWriteStream('filename.txt')
 const blob = new Blob([ 'a'.repeat(1E9*5) ]) // 1*5 MB
 
