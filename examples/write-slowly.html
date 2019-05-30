@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title>Write bytes slowly</title>
+  </head>
+  <body>
+    <p>
+      This test will write <input type="text" value="a" id="$val"> every second until it has written it <input id="$num" type="number" max="9999" value="1024"> times to test wheter or not<br>
+      We need to try and keep the service worker alive. Simply passing a stream over won't need keep alive techniques<br>
+      Make sure you don't have the developer tool open b/c it can prevent service
+      worker from restarting
+    </p>
+
+
+    <input type="checkbox" id="$tra" disabled> Using Transfariable ReadableStream<br>
+    <input type="checkbox" id="$mes" disabled> Using MessageChannel as stream (postMessage)<br>
+    <input type="checkbox" id="$wor" disabled> Using techniques (postMessage or fetch) to keep sw alive<br>
+    <input type="checkbox" id="$sec" disabled> Using a secure web context<br>
+    <input type="checkbox" id="$ifr" disabled> Using hidden iframe to download<br>
+    <input type="checkbox" id="$pop" disabled> Using popup to install sw<br>
+    <input type="checkbox" id="$loc" disabled> Using "location.href" to download`<br>
+    <input type="checkbox" id="$cro" disabled> Using cross origin service worker<br>
+
+    <br>
+
+    Choose a filename
+    <input id="$nam" value="sample.txt">
+    <br>
+
+    <button id="$start">Start</button>
+    <span id="$written"></span>
+
+    <br><br>
+
+    <label>
+      <input id="$not" type="checkbox"> enable desktop notification when finish
+    </label>
+    <br>
+    <label>
+      <input id="$sou" type="checkbox" name="wtf"> play sound when finish
+    </label>
+
+    <script src='https://code.responsivevoice.org/responsivevoice.js'></script>
+    <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
+    <script src="../StreamSaver.js"></script>
+    <script>
+      if ('isSecureContext' in window) {
+        $ifr.checked = $sec.checked = isSecureContext
+        $pop.checked = !isSecureContext
+      } else {
+        $sec.indeterminate = true
+      }
+
+      $loc.checked = !$ifr.checked
+      $cro.checked = new URL(streamSaver.mitm).origin !== window.origin
+
+      try {
+        const { readable } = new TransformStream()
+        const mc = new MessageChannel()
+        mc.port1.postMessage(readable, [readable])
+        mc.port1.close()
+        mc.port2.close()
+        $tra.checked = true
+      } catch (e) {
+        $mes.checked = true
+        $wor.checked = true
+      }
+
+      if (Notification.permission !== 'granted') {
+        $not.onchange = () => Notification.requestPermission().then(console.log, console.log)
+      }
+
+      $start.onclick = () => {
+        const max = $num.valueAsNumber
+        const progress = document.createElement('progress')
+        const byte = new TextEncoder().encode($val.value)
+        const start = Date.now()
+
+        $num.disabled = true
+        progress.max = max
+        progress.value = 0
+        $start.replaceWith(progress)
+
+        window.fileStream = streamSaver.createWriteStream($nam.value, { size: max * byte.length })
+        window.writer = fileStream.getWriter()
+
+        window.onunload = () => writer.abort()
+
+        $nam.disabled = $val.disabled = $num.disabled = true
+
+        writer.write(byte)
+        let i = 1
+        const interval = setInterval(() => {
+          writer.write(byte)
+          i++
+          progress.value = i
+          $written.innerText = (i * byte.length) + ' bytes written'
+          if (i === max) {
+            $sou.checked && responsiveVoice.speak('Download completed')
+            writer.close()
+            clearInterval(interval)
+          }
+        }, 1000)
+      }
+    </script>
+  </body>
+</html>

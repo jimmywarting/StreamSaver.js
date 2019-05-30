@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
+    <script src="../StreamSaver.js"></script>
+
+    <p>1) Set a filename</p>
+    <input type="text" id="$filename" value="sample.txt">
+
+    <hr>
+
+    <p>2) Write some data</p>
+
+    <button id="$a">Write some aaa's</button>
+    <button id="$b">Write some bbb's</button>
+    <button id="$c">Write some ccc's</button>
+    <button id="$ipsum">Write a lot of Lorem ipsum</button><br>
+    <input type="text" id="$custom" placeholder="custom text">
+      (may look like nothing is happening, but writes all keystorke to fileStream)
+
+    <hr>
+
+    <p>3) Abort for cancel, close for ending the write stream</p>
+    <button disabled id="$abort">Abort</button>
+    <button disabled id="$close">Close</button>
+
+    <script>
+      var Lorem = `Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+      Pellentesque gravida condimentum metus et porttitor. Curabitur
+      pharetra vestibulum egestas. Pellentesque quis tortor id ligula
+      cursus luctus ac at nisi. Mauris rutrum mattis vulputate. Donec
+      tempor eget lectus eu rhoncus. Etiam et auctor est. Aenean sem augue,
+      consectetur et ipsum fringilla, rhoncus tincidunt sem. Duis vel
+      rutrum lectus, non dui. Duis non urna non dolor elementum
+      commodo. Praesent commodo maximus lobortis. Curabitur fringilla
+      tellus`.replace(/\s\s+/g, ' ')
+
+      var fileStream, writer
+      var encode = TextEncoder.prototype.encode.bind(new TextEncoder)
+      let text = encode((Lorem + "\n\n").repeat(2*1024)) // 1 MiB
+      let a = new Uint8Array(1024).fill(97)
+      let b = new Uint8Array(1024).fill(98)
+      let c = new Uint8Array(1024).fill(99)
+
+      // Abort the download stream when leaving the page
+      window.isSecureContext && window.addEventListener('beforeunload', evt => {
+        writer.abort()
+      })
+
+      $abort.onclick = () => {
+        writer.abort()
+        document.body.innerHTML = '<a href="./plain-text.html">Try again</a>'
+      }
+
+      $close.onclick = () => {
+        writer.close()
+        document.body.innerHTML = '<a href="./plain-text.html">Try again</a>'
+      }
+
+      $a.onclick = $b.onclick = $c.onclick = $ipsum.onclick = $custom.oninput = evt => {
+
+        if (evt.target === $ipsum) {
+          var n = ~~prompt("How many MiB of lorem ipsum text do you want?", '1024')
+        }
+
+        if (!fileStream) {
+          fileStream = streamSaver.createWriteStream($filename.value || 'sample.txt')
+          writer = fileStream.getWriter()
+          $filename.disabled = true
+          $abort.disabled = $close.disabled = false
+        }
+
+
+        var data
+
+        if (evt.target === $a) data = a
+        if (evt.target === $b) data = b
+        if (evt.target === $c) data = c
+        if (evt.target === $custom) data = encode($custom.value)
+
+        $custom.value = ''
+
+        data && writer.write(data)
+
+        if (evt.target === $ipsum) {
+          let que = Promise.resolve()
+          let pump = () => {
+            n-- && que.then(() => {
+              writer.write(text).then(()=>{setTimeout(pump)})
+            })
+          }
+          pump()
+        }
+      }
+    </script>
+  </body>
+</html>
