@@ -9,25 +9,41 @@
 })('streamSaver', () => {
   'use strict'
 
-  let iframe, background
+  let mitmTransporter = null
+  let mitmWorker = null
+  let supportsTransferable = false
   const test = fn => { try { fn() } catch (e) {} }
   const ponyfill = window.WebStreamsPolyfill || {}
   const once = { once: true }
-  const firefox = 'MozAppearance' in document.documentElement.style
-  const mozExtension = location.protocol === 'moz-extension:'
+  const isSecureContext = window.isSecureContext
+  const useBlobFallback = /constructor/i.test(window.HTMLElement) || !!window.safari
+  const downloadStrategy = isSecureContext || 'MozAppearance' in document.documentElement.style
+    ? 'iframe'
+    : 'navigate'
+
   const streamSaver = {
     createWriteStream,
     WritableStream: window.WritableStream || ponyfill.WritableStream,
-    supported: false,
-    version: { full: '1.2.0', major: 1, minor: 2, dot: 0 },
-    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=1.2.0',
-    ping: 'https://jimmywarting.github.io/StreamSaver.js/ping.html?version=1.2.0'
+    supported: true,
+    version: { full: '2.0.0', major: 2, minor: 0, dot: 0 },
+    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0',
   }
 
+  /**
+   * create a hidden iframe and append it to the DOM (body)
+   *
+   * @param  {string} src page to load
+   * @return {HTMLIFrameElement} page to load
+   */
   function makeIframe (src) {
+    if (!src) throw new Error('meh')
     const iframe = document.createElement('iframe')
     iframe.hidden = true
     iframe.src = src
+    iframe.loaded = false
+    iframe.name = 'iframe'
+    iframe.isIframe = true
+    iframe.postMessage = (...args) => iframe.contentWindow.postMessage(...args)
     iframe.addEventListener('load', () => {
       iframe.loaded = true
     }, once)
@@ -35,14 +51,64 @@
     return iframe
   }
 
+  /**
+   * create a popup that simulates the basic things
+   * of what a iframe can do
+   *
+   * @param  {string} src page to load
+   * @return {object}     iframe like object
+   */
+  function makePopup (src) {
+    const options = 'width=200,height=100'
+    const delegate = document.createDocumentFragment()
+    const popup = {
+      frame: window.open(src, 'popup', options),
+      loaded: false,
+      isIframe: false,
+      isPopup: true,
+      remove () { popup.frame.close() },
+      addEventListener (...args) { delegate.addEventListener(...args) },
+      dispatchEvent (...args) { delegate.dispatchEvent(...args) },
+      removeEventListener (...args) { delegate.removeEventListener(...args) },
+      postMessage (...args) { popup.frame.postMessage(...args)}
+    }
+
+    const onReady = evt => {
+      if (evt.source === popup.frame) {
+        popup.loaded = true
+        window.removeEventListener('message', onReady)
+        popup.dispatchEvent(new Event('load'))
+      }
+    }
+
+    window.addEventListener('message', onReady)
+
+    return popup
+  }
+
+  /**
+   * Destroys a channel and return null
+   *
+   * @param  {MessageChannel} channel [description]
+   * @return {null}         [description]
+   */
+  function destroyChannel (channel) {
+    channel.port1.onmessage = null
+    channel.port1.close()
+    channel.port2.close()
+    return null
+  }
+
   test(() => {
     background = chrome.extension.getBackgroundPage() === window
   })
 
-  test(() => {
-    // Some browser has it but ain't allowed to construct a stream yet
-    streamSaver.supported = 'serviceWorker' in navigator && !!new ReadableStream()
-  })
+  try {
+    // We can't look for service worker since it may still work on http
+    !!new Response(new ReadableStream())
+  } catch (err) {
+    useBlobFallback = true
+  }
 
   test(() => {
     // Transfariable stream was first enabled in chrome v73 behind a flag
@@ -51,6 +117,7 @@
     mc.port1.postMessage(readable, [readable])
     mc.port1.close()
     mc.port2.close()
+    supportsTransferable = true
     // Freeze TransformStream object (can only work with native)
     Object.defineProperty(streamSaver, 'TransformStream', {
       configurable: false,
@@ -59,146 +126,155 @@
     })
   })
 
-  const isSecureContext = window.isSecureContext && (!firefox || !background)
-
-  function iframePostMessage (url, args) {
-    iframe = iframe || makeIframe(url)
-    if (iframe.loaded) {
-      iframe.contentWindow.postMessage(...args)
-    } else {
-      iframe.addEventListener('load', () => {
-        iframe.contentWindow.postMessage(...args)
-      }, once)
+  function loadTransporter () {
+    if (!mitmTransporter) {
+      mitmTransporter = isSecureContext
+        ? makeIframe(streamSaver.mitm)
+        : makePopup(streamSaver.mitm)
     }
   }
 
-  function load (url, noTabs, popUp) {
-    let popup = { close: () => (popup.closed = 1), fns: [], onLoad: fn => popup.fns.push(fn) }
-    if (!noTabs && window.chrome && chrome.tabs && chrome.tabs.create) {
-      chrome.tabs.create({ url: url, active: false }, popup2 => {
-        popup.close = () => chrome.tabs.remove(popup2.id)
-
-        if (popup.closed) {
-          popup.close()
-        } else {
-          let fn
-          chrome.tabs.onUpdated.addListener(fn = (tabId, _, tab) => {
-            if (tabId === popup2.id && tab.status === 'complete') {
-              chrome.tabs.onUpdated.removeListener(fn)
-              popup.onLoad = fn => fn()
-              popup.fns.forEach(popup.onLoad)
-            }
-          })
-        }
-      })
-    } else {
-      if (popUp || !firefox && !isSecureContext) {
-        popup = window.open(url, Math.random())
-      } else {
-        popup.close = (x => () => x.remove())(makeIframe(url))
-      }
+  /**
+   * @param  {string} filename filename that should be used
+   * @param  {object} options  [description]
+   * @param  {number} size     depricated
+   * @return {WritableStream}
+   */
+  function createWriteStream (filename, options, size) {
+    let opts = {
+      size: null,
+      pathname: null,
+      writableStrategy: undefined,
+      readableStrategy: undefined
     }
-    return popup
-  }
 
-  function createWriteStream (filename, queuingStrategy, size) {
     // normalize arguments
-    if (Number.isFinite(queuingStrategy)) {
-      [size, queuingStrategy] = [queuingStrategy, size]
+    if (Number.isFinite(options)) {
+      [ size, options ] = [ options, size ]
+      console.warn('[StreamSaver] Depricated pass an object as 2nd argument when creating a write stream')
+      opts.size = size
+      opts.writableStrategy = options
+    } else if (options && options.highWaterMark) {
+      console.warn('[StreamSaver] Depricated pass an object as 2nd argument when creating a write stream')
+      opts.size = size
+      opts.writableStrategy = options
+    } else {
+      opts = options || {}
     }
+    if (!useBlobFallback) {
+      loadTransporter()
 
-    let channel = new MessageChannel()
-    let popup
-    let hash = ''
-    let setupChannel = readableStream => new Promise(resolve => {
-      const transferable = [ channel.port2 ]
-      const request = { filename, size }
-      const args = [ request, '*', transferable ]
+      let bytesWritten = 0 // by StreamSaver.js (not the service worker)
+      let downloadStarted = false // triggerd the download ( secureContext ? iframe : location.href )
+      let downloadUrl = null
+      let channel = new MessageChannel()
 
-      // Pass along transfarable stream
-      if (readableStream) {
+      // Make filename RFC5987 compatible
+      filename = encodeURIComponent(filename.replace(/\//g, ':'))
+        .replace(/['()]/g, escape)
+        .replace(/\*/g, '%2A')
+
+      const response = {
+        transferringReadable: supportsTransferable,
+        pathname: opts.pathname || Math.random().toString().slice(-6) + '/' + filename,
+        headers: {
+          'Content-Type': 'application/octet-stream; charset=utf-8',
+          'Content-Disposition': "attachment; filename*=UTF-8''" + filename
+        }
+      }
+
+      if (!opts.size) {
+        response.headers['Content-Length'] = opts.size
+      }
+
+      const args = [ response, '*', [ channel.port2 ] ]
+
+      if (supportsTransferable) {
+        const transformer = downloadStrategy === 'iframe' ? undefined : {
+          // This transformer & flush method is only used by insecure context.
+          transform (chunk, controller) {
+            bytesWritten += chunk.length
+            controller.enqueue(chunk)
+
+            if (downloadUrl) {
+              location.href = downloadUrl
+              downloadUrl = null
+            }
+          },
+          flush () {
+            if (downloadUrl) {
+              location.href = downloadUrl
+            }
+          }
+        }
+        var ts = new streamSaver.TransformStream(
+          transformer,
+          opts.writableStrategy,
+          opts.readableStrategy
+        )
+        const readableStream = ts.readable
+
         channel.port1.postMessage({ readableStream }, [ readableStream ])
-        request.transferringReadable = true
       }
 
       channel.port1.onmessage = evt => {
-        // Service worker sent us a link from where
-        // we recive the readable link (stream)
+        // Service worker sent us a link that we should open.
         if (evt.data.download) {
-          resolve() // Signal that the writestream are ready to recive data
-          if (popup) {
-            if (!hash && !iframe && firefox) {
-              iframePostMessage(streamSaver.ping, [evt.data, '*'])
+          // Special treatment for popup...
+          if (downloadStrategy === 'navigate') {
+            mitmTransporter.remove()
+            mitmTransporter = null
+            if (bytesWritten) {
+              location.href = evt.data.download
+            } else {
+              downloadUrl = evt.data.download
             }
-            popup.close() // don't need the popup any longer
-          }
-          popup = load(evt.data.download, isSecureContext)
+          } else {
+            if (mitmTransporter.isPopup) {
+              mitmTransporter.remove()
+              // Special case for firefox, they can keep sw alive with fetch
+              if (downloadStrategy === 'iframe') {
+                makeIframe(streamSaver.mitm)
+              }
+            }
 
-          // Cleanup
-          if (readableStream) {
-            // We don't need postMessages now when stream are transferable
-            channel.port1.onmessage = null
-            channel.port1.close()
-            channel.port2.close()
-          }
-        } else {
-          if (popup) {
-            if (firefox) popup.close()
-            popup = null
-          }
-
-          channel.port1.onmessage = null
-        }
-      }
-
-      if (isSecureContext) {
-        return iframePostMessage(streamSaver.mitm, args)
-      }
-      if (!hash && mozExtension && !streamSaver.transformStream) {
-        hash = '#' + Math.random()
-      }
-      popup = load(streamSaver.mitm + hash, !hash, true)
-      if (popup.postMessage) {
-        let onready = evt => {
-          if (evt.source === popup) {
-            popup.postMessage(...args)
-            window.removeEventListener('message', onready)
+            // We never remove this iframes b/c it can interrupt saveAs
+            makeIframe(evt.data.download)
           }
         }
+      }
 
-        // Another problem that cross origin don't allow is scripting
-        // so popup.onload() don't work but postMessage still dose
-        // work cross origin
-        window.addEventListener('message', onready)
+      if (mitmTransporter.loaded) {
+        mitmTransporter.postMessage(...args)
       } else {
-        popup.onLoad(() => {
-          args[0].hash = hash
-          iframePostMessage(streamSaver.ping, args)
-        })
+        mitmTransporter.addEventListener('load', () => {
+          mitmTransporter.postMessage(...args)
+        }, once)
       }
-    })
-
-    if (streamSaver.TransformStream) {
-      const ts = new streamSaver.TransformStream({
-        start () {
-          return new Promise(resolve =>
-            setTimeout(() => setupChannel(ts.readable).then(resolve))
-          )
-        }
-      }, queuingStrategy)
-
-      return ts.writable
     }
 
-    return new streamSaver.WritableStream({
+    const chunks = []
+
+    return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
       start () {
         // is called immediately, and should perform any actions
         // necessary to acquire access to the underlying sink.
         // If this process is asynchronous, it can return a promise
         // to signal success or failure.
-        return setupChannel()
+        // return setupChannel()
+        console.log('useBlobFallback', useBlobFallback)
       },
       write (chunk) {
+        if (useBlobFallback) {
+          // Safari... The new IE6
+          // https://github.com/jimmywarting/StreamSaver.js/issues/69
+          //
+          // even doe it has everything it fails to download anything
+          // that comes from the service worker..!
+          chunks.push(chunk)
+          return
+        }
+
         // is called when a new chunk of data is ready to be written
         // to the underlying sink. It can return a promise to signal
         // success or failure of the write operation. The stream
@@ -210,14 +286,32 @@
         // it has been written. Otherwise we can't handle backpressure
         // EDIT: Transfarable streams solvs this...
         channel.port1.postMessage(chunk)
+        bytesWritten += chunk.length
+
+        if (downloadUrl) {
+          location.href = downloadUrl
+          downloadUrl = null
+        }
       },
       close () {
+        if (useBlobFallback) {
+          const blob = new Blob(chunks, { type: 'application/octet-stream; charset=utf-8' })
+          const link = document.createElement('a')
+          link.href = URL.createObjectURL(blob)
+          link.download = filename
+          link.target = '_blank'
+          link.click()
+          return
+        }
         channel.port1.postMessage('end')
+        channel = destroyChannel(channel)
       },
       abort () {
+        chunks = []
         channel.port1.postMessage('abort')
+        channel = destroyChannel(channel)
       }
-    }, queuingStrategy)
+    }, opts.writableStrategy)
   }
 
   return streamSaver
