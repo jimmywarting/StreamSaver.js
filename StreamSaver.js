@@ -10,13 +10,12 @@
   'use strict'
 
   let mitmTransporter = null
-  let mitmWorker = null
   let supportsTransferable = false
   const test = fn => { try { fn() } catch (e) {} }
   const ponyfill = window.WebStreamsPolyfill || {}
   const once = { once: true }
   const isSecureContext = window.isSecureContext
-  const useBlobFallback = /constructor/i.test(window.HTMLElement) || !!window.safari
+  let useBlobFallback = /constructor/i.test(window.HTMLElement) || !!window.safari
   const downloadStrategy = isSecureContext || 'MozAppearance' in document.documentElement.style
     ? 'iframe'
     : 'navigate'
@@ -26,7 +25,7 @@
     WritableStream: window.WritableStream || ponyfill.WritableStream,
     supported: true,
     version: { full: '2.0.0', major: 2, minor: 0, dot: 0 },
-    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0',
+    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
   }
 
   /**
@@ -70,7 +69,7 @@
       addEventListener (...args) { delegate.addEventListener(...args) },
       dispatchEvent (...args) { delegate.dispatchEvent(...args) },
       removeEventListener (...args) { delegate.removeEventListener(...args) },
-      postMessage (...args) { popup.frame.postMessage(...args)}
+      postMessage (...args) { popup.frame.postMessage(...args) }
     }
 
     const onReady = evt => {
@@ -98,10 +97,6 @@
     channel.port2.close()
     return null
   }
-
-  test(() => {
-    background = chrome.extension.getBackgroundPage() === window
-  })
 
   try {
     // We can't look for service worker since it may still work on http
@@ -164,10 +159,9 @@
     if (!useBlobFallback) {
       loadTransporter()
 
-      let bytesWritten = 0 // by StreamSaver.js (not the service worker)
-      let downloadStarted = false // triggerd the download ( secureContext ? iframe : location.href )
-      let downloadUrl = null
-      let channel = new MessageChannel()
+      var bytesWritten = 0 // by StreamSaver.js (not the service worker)
+      var downloadUrl = null
+      var channel = new MessageChannel()
 
       // Make filename RFC5987 compatible
       filename = encodeURIComponent(filename.replace(/\//g, ':'))
@@ -253,7 +247,7 @@
       }
     }
 
-    const chunks = []
+    let chunks = []
 
     return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
       start () {
@@ -262,7 +256,6 @@
         // If this process is asynchronous, it can return a promise
         // to signal success or failure.
         // return setupChannel()
-        console.log('useBlobFallback', useBlobFallback)
       },
       write (chunk) {
         if (useBlobFallback) {
