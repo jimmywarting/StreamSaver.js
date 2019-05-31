@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <button id="$start">Start</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
+
+    <!--
+    includes blob.stream() polyfill
+    while Also making File constructor work in some browser that don't support it
+    -->
+    <script src="https://cdn.jsdelivr.net/gh/eligrey/Blob.js/Blob.js"></script>
+
+    <script src="../StreamSaver.js"></script>
+    <script src="zip-stream.js"></script>
+    <script>
+      $start.onclick = () => {
+        const fileStream = streamSaver.createWriteStream('archive.zip')
+
+        const file1 = new File(['file1 content'], '/streamsaver-zip-example/file1.txt')
+
+        // File Like object works too
+        const file2 = {
+          name: '/streamsaver-zip-example/file2.txt',
+          stream () {
+            // if you want to play it cool and use new api's
+            //
+            // const { readable, writable } = new TextEncoderStream()
+            // writable.write('file2 content')
+            // return readable
+
+            return new ReadableStream({
+              start (ctrl) {
+                ctrl.enqueue(new TextEncoder().encode('file2 generated with readableStream'))
+                ctrl.close()
+              }
+            })
+          }
+        }
+
+        const blob = new Blob(['support blobs too'])
+
+        const file3 = {
+          name: '/streamsaver-zip-example/blob-example.txt',
+          stream: () => blob.stream()
+        }
+
+        // Ideally world i would just have done something like TextEncoderStream
+        // where you would get { readable writable } = new ZIP()
+        //
+        // readable would be piped to streamsaver, and the writer would accept
+        // file-like object, but that made it dependent on WritableStream...
+        //
+        // So i built ZIP-Stream simular to a ReadbleStream but you enqueue
+        // file-like objects meaning it should have at at the very least name, stream()
+        //
+        // it supports pull() too that gets called when it ask for more files.
+        //
+        // NOTE: My zip library can't generate zip's over 4gb and has no compresseion
+        //       it was built solo for the purpus of saving multiple files in browser
+        const readableZipStream = new ZIP({
+          start (ctrl) {
+            ctrl.enqueue(file1)
+            ctrl.enqueue(file2)
+            ctrl.enqueue(file3)
+            ctrl.enqueue({name: '/streamsaver-zip-example/empty folder', directory: true})
+            // ctrl.close()
+          },
+          async pull (ctrl) {
+            const url = 'https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4'
+            const res = await fetch(url)
+            const stream = () => res.body
+            const name = '/streamsaver-zip-example/cat.mp4'
+
+            ctrl.enqueue({ name, stream })
+            ctrl.close()
+          }
+        })
+
+        // more optimized
+        if (window.WritableStream && readableZipStream.pipeTo) {
+          return readableZipStream.pipeTo(fileStream).then(() => console.log('done writing'))
+        }
+
+        window.writer = fileStream.getWriter()
+
+        const reader = readableZipStream.getReader()
+        const pump = () => reader.read()
+          .then(res => res.done ? writer.close() : writer.write(res.value).then(pump))
+
+        pump()
+      }
+    </script>
+  </body>
+</html>

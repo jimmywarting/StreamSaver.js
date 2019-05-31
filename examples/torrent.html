@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+  </head>
+  <body>
+    <p>
+      This download the <a href="https://webtorrent.io/torrents/sintel.torrent">Sintel torrent</a>
+      using HTTP, WebRTC and WebSeed.<br>Using a combination of node streams and whatwg streams
+    </p>
+
+    <button id="$start">Start</button>
+
+    <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
+    <script src="../StreamSaver.js"></script>
+    <script>
+
+      function size (bytes, precision) {
+        if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';
+        if (typeof precision === 'undefined') precision = 1;
+        var units = ['bytes', 'kiB', 'MiB', 'GiB', 'TiB', 'PiB'],
+        number = Math.floor(Math.log(bytes) / Math.log(1024));
+        return (bytes / Math.pow(1024, Math.floor(number))).toFixed(precision) +  ' ' + units[number];
+      }
+
+      const client = window.client = new WebTorrent()
+
+      // Sintel, a free, Creative Commons movie
+      const torrentId = 'https://webtorrent.io/torrents/sintel.torrent'
+
+      $start.onclick = () => {
+        document.body.innerHTML = '<p id="$info">Downloading Torrent-file metadata</p>'
+
+        // PS: If you are using insecure sites you better create the writestream with a user interaction event.
+        //     with https it doesn't matther.
+        window.fileStream = streamSaver.createWriteStream('Sintel.mp4', {
+          size: 129241752,
+          // writableStrategy: new ByteLengthQueuingStrategy({ highWaterMark: 1024000 }),
+          // readableStrategy: new ByteLengthQueuingStrategy({ highWaterMark: 1024000 })
+        })
+        window.writer = fileStream.getWriter()
+
+        client.add(torrentId, torrent => {
+          $info.remove()
+
+          const meter = document.createElement('meter')
+          const speed = document.createElement('p')
+          const downloaded = document.createElement('p')
+          const timeLeft = document.createElement('p')
+          const writerSize = document.createElement('p')
+
+          document.body.appendChild(meter)
+          document.body.appendChild(speed)
+          document.body.appendChild(downloaded)
+          document.body.appendChild(timeLeft)
+          document.body.appendChild(writerSize)
+
+          writerSize.innerText = `writer.desiredSize = ${writer.desiredSize}`
+
+          torrent.on('download', function (bytes) {
+            downloaded.innerText =  `total downloaded: ${size(torrent.downloaded)} of ${size(torrent.length)}`
+            speed.innerText = 'download speed: ' + size(torrent.downloadSpeed)
+            timeLeft.innerText = 'Time Left: ' + (torrent.timeRemaining / 1000).toFixed(0) + ' sec'
+            meter.value = torrent.progress
+          })
+
+          const file = torrent.files[5]
+
+          // Unfortunately we have two different stream protocol so we can't pipe.
+          file.createReadStream()
+            .on('data', data => {
+              writer.write(data).then(() => {
+                writerSize.innerText = `writer.desiredSize = ${(writer.desiredSize)}`
+              })
+              writerSize.innerText = `writer.desiredSize = ${(writer.desiredSize)}`
+            })
+            .on('end', () => writer.close())
+        })
+      }
+    </script>
+  </body>
+</html>
