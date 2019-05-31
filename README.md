@@ -78,6 +78,9 @@ streamSaver.TransformStream = streamSaver.TransformStream
 streamSaver.mitm = 'https://example.com/custom_mitm.html'
 ```
 
+Examples
+========
+
 There are a few examples in the [examples] directory
 
 - [Saving audio or video stream using mediaRecorder](https://jimmywarting.github.io/StreamSaver.js/examples/media-stream.html)
