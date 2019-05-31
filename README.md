@@ -9,189 +9,94 @@ But there is one obstacle - The RAM it can hold and the max blob size limitation
 
 StreamSaver.js takes a different approach. Instead of saving data in client-side
 storage or in memory you could now actually create a writable stream directly to
-the file system (I'm not talking about chromes sandboxed file system)
+the file system (I'm not talking about chromes sandboxed file system or any other
+web storage)
 
 StreamSaver.js is the solution to saving streams on the client-side.
 It is perfect for webapps that need to save really large amounts of data created
 on the client-side, where the RAM is really limited, like on mobile devices.
 
-
-Supported browsers
-==================
-
-| Browser    | Supported | Missing                 |
-| ---------- | --------- | ----------------------- |
-| Opera 39+  | Yes       |                         |
-| Chrome 52+ | Yes       |                         |
-| Firefox 65+| Yes       |                         |
-| Safari     | No        | download functionality  |
-| Edge       | No        | Streams, SW             |
-| IE         | No        | Everything (IE is dead) |
-
-
-Aha moments
-===========
-  - Chrome don't show that the file is being download and won't give you a dialog to choose where to save it until you have written at least 1024 bytes or so (think headers are included)... Or until you close the stream<br>
-  But that only applies when you have the "ask where to save each time" turned on in your browser settings
-  - Chrome was capable of writing more than 15 GB of data without any memory issues
-
-
 Getting started
 ===============
-**It's important to test browser support before you include the [web stream polyfill][15]**<br>
-because the serviceWorker needs to respondWith a native version of the ReadableStream
+StreamSaver in it's simplest form
 ```html
-<script src="StreamSaver.js"></script> <!-- load before streams polyfill to detect support -->
-<script src="https://unpkg.com/@mattiasbuelens/web-streams-polyfill/dist/polyfill.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
+<script src="StreamSaver.js"></script>
 <script>
-	// it also support commonJs and amd
-	import { createWriteStream, supported, version } from 'StreamSaver'
-	const { createWriteStream, supported, version } = require('StreamSaver')
-	const { createWriteStream, supported, version } = window.streamSaver
-	alert( supported )
+	import streamSaver from 'StreamSaver'
+	const streamSaver = require('StreamSaver')
+	const streamSaver = window.streamSaver
+</script>
+<script>
+  const fileStream = streamSaver.createWriteStream('filename.txt', {
+    size: 22, // (optional) Will show progress
+    writableStrategy: undefined, // (optional)
+    readableStrategy: undefined  // (optional)
+  })
+
+  new Response('StreamSaver is awesome').body
+    .pipeTo(fileStream)
+    .then(success, error)
 </script>
 ```
 
-Syntax
-======
+Some browser have ReadableStream but not WritableStream. [web-streams-polyfill](https://github.com/MattiasBuelens/web-streams-polyfill) can fix this gap. It's better to load the ponyfill instead of the polyfill and override the existing implementation because StreamSaver works better when a native ReadableStream is transferable to the service worker. hopefully [MattiasBuelens](https://github.com/MattiasBuelens) will fix the missing implementations instead of overriding the existing. If you think you can help out here is the [issue](https://github.com/MattiasBuelens/web-streams-polyfill/issues/20)
 
-```javascript
-// If you know what the size is going to be then you can specify
-// that as 2nd arguments and it will use that as Content-Length header
-const fileStream = streamSaver.createWriteStream('filename.txt', size)
-const writer = fileStream.getWriter()
-// WriteStream is a whatwg standard writable stream
-// https://streams.spec.whatwg.org/
+There a some settings you can apply to StreamSaver to configure what it should use
 
-// and the write fn only accepts uint8array
-writer.write(uint8array)
-// when you are done: you close it
-writer.close()
-// when you want to cancel the download: you abort
-writer.abort(reason) // ATM Canary only recognize if the stream has been errored
+## Best practice
 
-// it's also possible to pipe a readableStream stream to the fileStream
-// but then you shouldn't call .getWriter() or .close()
-readableStream.pipeTo(fileStream)
-```
-That is pretty much all StreamSaver.js does :)
+**Use https** if you can. That way you don't have to open the man in the middle
+in a popup to install the service worker from another secure context. Popups are often blocked
+but if you can't it's best that you **initiate the `createWriteStream`
+on user interaction**. Even if you don't have any data ready - this is so that you can get around the popup blockers. (In secure context this don't matter)
+Another benefit of using https is that the mitm-iframe can ping the service worker to prevent it from going idle. (worker goes idle after 30 sec in firefox, 5 minutes in blink) but also this won't mater if the browser supports [transferable streams](https://github.com/whatwg/streams/blob/master/transferable-streams-explainer.md) throught postMessage since service worker don't have to handle any logic. (the stream that you transfer to the service worker will be the stream we respond with)
 
+**Handle unload event** when user leaves the page. The download gets broken when you leave the page.
 
-Examples
-======
+```js
+window.onunload = () => {
+  writableStream.abort()
+  // also possible to call abort on the writer you got from `getWriter()`
+  writer.abort()
+}
 
-### Writing some plain text
-
-```javascript
-const fileStream = streamSaver.createWriteStream('filename.txt')
-const writer = fileStream.getWriter()
-const encoder = new TextEncoder
-let data = 'a'.repeat(1024)
-let uint8array = encoder.encode(data + "\n\n")
-
-writer.write(uint8array)
-writer.close()
-```
-
-### Read blob as a stream and pipe it (see: [Screw FileReader](https://www.npmjs.com/package/screw-filereader))
-
-```javascript
-require('screw-filereader') // optional in chrome v76, streams exist native on blobs now!
-const blob = new Blob([ 'a'.repeat(1E9*5) ]) // 1*5 MB
-const fileStream = streamSaver.createWriteStream('filename.txt', blob.size)
-
-blob.stream().pipeTo(fileStream)
-```
-
-### Save a media stream
-
-
-```javascript
-get_user_media_stream_somehow().then(mediaStream => {
-	let mediaRecorder = new MediaRecorder(mediaStream)
-	let chunks = Promise.resolve()
-	let fileStream = streamSaver.createWriteStream('filename.mp4')
-	let writer = fileStream.getWriter()
-	// use .mp4 for video(camera & screen) and .wav for audio(microphone)
-
-	// Start recording
-	mediaRecorder.start()
-
-	closeBtn.onclick = event => {
-		mediaRecorder.stop()
-		setTimeout(() =>
-			chunks.then(evt => writer.close())
-		, 1000)
-	}
-
-	mediaRecorder.ondataavailable = ({ blob }) => {
-		chunks = chunks.then(() => blob.arrayBuffer().then(buf => 
-			writer.write(new Uint8Array(buf))
-		))
-	}
-
-})
-```
-
-### Get a "stream" from ajax
-
-```javascript
-fetch(url).then(res => {
-  const fileStream = streamSaver.createWriteStream('filename.txt')
-
-  // more optimized
-  if (res.body.pipeTo) {
-    return res.body.pipeTo(fileStream)
+window.onbeforeunload = evt => {
+  if (!done) {
+    evt.returnValue = `Are you sure you want to leave?`;
   }
-  
-  const writer = fileStream.getWriter()
-  const reader = res.body.getReader()
-  const pump = () => reader.read().then(({ value, done }) => done
-    // close the stream so we stop writing
-    ? writer.close()
-    // Write one chunk, then get the next one
-    : writer.write(value).then(pump)
-  )
+}
+```
+Note that when using insecure context StreamSaver will navigate to the download url instead of using an hidden iframe to initiate the download, this will trigger the `onbefureunload` event when the download starts, but it will not call the `onunload` event... In secure context you can add this handler immediately. Otherwise this has to be added sometime later.
 
-  // Start the reader
-  pump().then(() =>
-    console.log('Closed the stream, Done writing')
-  )
-})
+
+```js
+// StreamSaver can detect and use the Ponyfill that is loaded from the cdn.
+streamSaver.WritableStream = streamSaver.WritableStream
+streamSaver.TransformStream = streamSaver.TransformStream
+// if you decide to host mitm + sw yourself
+streamSaver.mitm = 'https://example.com/custom_mitm.html'
 ```
 
-Here is an online demo with adding ID3 tag to mp3 file on the fly:
-[egoroof.ru/browser-id3-writer/stream](https://egoroof.ru/browser-id3-writer/stream)
+There are a few examples in the [examples] directory
 
-### Get a node-stream from [webtorrent][19]
-**Note** it still keeps the data in memory. A more correct way to do this would be
-to use some kind of [Custom chunk store](https://webtorrent.io/docs#-client-add-torrentid-opts-function-ontorrent-torrent-) (must follow [abstract-chunk-store](https://www.npmjs.com/package/abstract-chunk-store) API)
+- [Saving audio or video stream using mediaRecorder](https://jimmywarting.github.io/StreamSaver.js/examples/media-stream.html)
+- [Piping a fetch response to StreamSaver](https://jimmywarting.github.io/StreamSaver.js/examples/fetch.html)
+- [Write as you type](https://jimmywarting.github.io/StreamSaver.js/examples/plain-text.html)
+- [Saving a blob/file](https://jimmywarting.github.io/StreamSaver.js/examples/saving-a-blob.html)
+- [Saving a file using webtorrent](https://jimmywarting.github.io/StreamSaver.js/examples/torrent.html)
+- [Saving multiple files as a zip](https://jimmywarting.github.io/StreamSaver.js/examples/saving-multiple-files.html)
+- [slowly write 1 byte / sec](https://jimmywarting.github.io/StreamSaver.js/examples/write-slowly.html)
 
-```javascript
-const client = new WebTorrent()
-const torrentId = 'magnet:?xt=urn:btih:6a9759bffd5c0af65319979fb7832189f4f3c35d&dn=sintel.mp4&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&tr=wss%3A%2F%2Ftracker.webtorrent.io&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2Fsintel-1024-surround.mp4'
-// Sintel, a free, Creative Commons movie
+In the wild
+- [Adding ID3 tag to mp3 file on the fly](https://egoroof.ru/browser-id3-writer/stream) - by [Artyom Egorov](https://github.com/egoroof)
 
-client.add(torrentId, torrent => {
-	// Download the first file
 
-	const file = torrent.files[0]
-	let fileStream = streamSaver.createWriteStream(file.name, file.size)
-	let writer = fileStream.getWriter()
-
-	// Unfortunately we have two different stream protocol so we can't pipe.
-	file.createReadStream()
-		.on('data', data => writer.write(data))
-		.on('end', () => writer.close())
-})
-```
-
-How is this possible?
+How dose it work?
 =====================
-There is not any magical saveAs() function that saves a stream, file or blob.
-The way we mostly save Blobs/Files today is with the help of [a[download]][5] attribute
-[FileSaver.js][2] takes advantage of this and create a convenient saveAs(blob, filename)
-function, very fantastic, but you can't create a objectUrl from a stream and attach
+There is no magical `saveAs()` function that saves a stream, file or blob.
+The way we mostly save Blobs/Files today is with the help of [Object URLs](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL) and  [`a[download]`][5] attribute
+[FileSaver.js][2] takes advantage of this and create a convenient `saveAs(blob, filename)`. fantastic! But you can't create a objectUrl from a stream and attach
 it to a link...
 ```javascript
 link = document.createElement('a')
@@ -201,21 +106,18 @@ link.click() // Save
 ```
 So the one and only other solution is to do what the server does: Send a stream
 with Content-Disposition header to tell the browser to save the file.
-But we don't have a server! So the only solution is to create a service worker
-that can intercept links and use [respondWith()][4]
-This will scream high restriction just by mentioning service worker. It's such a
-powerful tool that it need to run on https but there is a workaround for http
-sites: popups + 3rd party https site. Who would have guess that?
-But I won't go into details on how that works. (The idea is to use a middle man
-to send a dataChannel from http to a serviceWorker that runs on https).
+But we don't have a server! So the solution is to create a service worker
+that can intercept request and use [respondWith()][4] and act as a server.<br>
+But a service workers are only allowed in secure contexts and it requires some effort to put up. Most of the time you are working in the main thread and the service worker are only alive for < 5 minutes before it goes idle.<br>
 
-So it all boils down to using
-[serviceWorker][6], [MessageChannel][7], [postMessage][8], [fetch][9],
-[respondWith][10], [iframes][11], [popups][12] (for http -> https -> serviceWorker),
-[Response][13] and also WritableStream for convenience and backpressure
+ 1. So StreamSaver creates a own man in the middle that installs the service worker in a secure context hosted on github static pages. either from a iframe (in secure context) or a new popup if your page is insecure.
+ 2. Transfer the stream (or DataChannel) over to the service worker using postMessage.
+ 3. And then the worker creates a download link that we then open.
 
+if a "transferable" readable stream was not passed to the service worker then the mitm will also try to keep the service worker alive by pinging it every x second to prevent it from going idle.
 
-Test locally
+To test this locally, spin up a local server<br>
+(we don't use any pre compiler or such)
 ```bash
 # A simple php or python server is enough
 php -S localhost:3001
@@ -238,8 +140,11 @@ python -m SimpleHTTPServer 3001
 [12]: https://developer.mozilla.org/en-US/docs/Web/API/Window/open
 [13]: https://developer.mozilla.org/en-US/docs/Web/API/Response
 [14]: https://streams.spec.whatwg.org/#rs-class
+[ReadableStream]: https://developer.mozilla.org/en-US/docs/Web/API/ReadableStream
+[WritableStream]: https://developer.mozilla.org/en-US/docs/Web/API/WritableStream
 [15]: https://www.npmjs.com/package/@mattiasbuelens/web-streams-polyfill
 [16]: https://developer.microsoft.com/en-us/microsoft-edge/platform/status/fetchapi
 [19]: https://webtorrent.io
+[examples]: https://github.com/jimmywarting/StreamSaver.js/blob/master/examples
 [npm-image]: https://img.shields.io/npm/v/streamsaver.svg?style=flat-square
 [npm-url]: https://www.npmjs.com/package/streamsaver

@@ -15,21 +15,24 @@
         const fileStream = streamSaver.createWriteStream('cat.mp4')
 
         fetch(url).then(res => {
+          const readableStream = res.body
+
           // more optimized
-          if (window.WritableStream && res.body.pipeTo) {
-            return res.body.pipeTo(fileStream).then(() => console.log('done writing'))
+          if (window.WritableStream && readableStream.pipeTo) {
+            return readableStream.pipeTo(fileStream)
+              .then(() => console.log('done writing'))
           }
 
           window.writer = fileStream.getWriter()
 
           const reader = res.body.getReader()
           const pump = () => reader.read()
-          .then(res => res.done
-            ? writer.close()
-            : writer.write(res.value).then(pump))
+            .then(res => res.done
+              ? writer.close()
+              : writer.write(res.value).then(pump))
 
-            pump()
-          })
+          pump()
+        })
       }
     </script>
   </body>
