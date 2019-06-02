@@ -119,7 +119,7 @@ self.onfetch = event => {
     console.warn('Depricated')
     // Make filename RFC5987 compatible
     fileName = encodeURIComponent(fileName).replace(/['()]/g, escape).replace(/\*/g, '%2A')
-    responseHeaders.set('Content-Disposition', "attachment; filename*=UTF-8''" + filename)
+    responseHeaders.set('Content-Disposition', "attachment; filename*=UTF-8''" + fileName)
   }
 
   event.respondWith(new Response(stream, { headers: responseHeaders }))
