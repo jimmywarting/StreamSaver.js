@@ -177,7 +177,7 @@
         }
       }
 
-      if (!opts.size) {
+      if (opts.size) {
         response.headers['Content-Length'] = opts.size
       }
 
