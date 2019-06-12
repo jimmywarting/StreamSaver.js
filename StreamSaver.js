@@ -13,7 +13,6 @@
   let supportsTransferable = false
   const test = fn => { try { fn() } catch (e) {} }
   const ponyfill = window.WebStreamsPolyfill || {}
-  const once = { once: true }
   const isSecureContext = window.isSecureContext
   let useBlobFallback = /constructor/i.test(window.HTMLElement) || !!window.safari
   const downloadStrategy = isSecureContext || 'MozAppearance' in document.documentElement.style
@@ -45,7 +44,7 @@
     iframe.postMessage = (...args) => iframe.contentWindow.postMessage(...args)
     iframe.addEventListener('load', () => {
       iframe.loaded = true
-    }, once)
+    }, { once: true })
     document.body.appendChild(iframe)
     return iframe
   }
@@ -87,7 +86,10 @@
 
   try {
     // We can't look for service worker since it may still work on http
-    !!new Response(new ReadableStream())
+    new Response(new ReadableStream())
+    if (isSecureContext && !('serviceWorker' in navigator)) {
+      useBlobFallback = true
+    }
   } catch (err) {
     useBlobFallback = true
   }
@@ -230,7 +232,7 @@
       } else {
         mitmTransporter.addEventListener('load', () => {
           mitmTransporter.postMessage(...args)
-        }, once)
+        }, { once: true })
       }
     }
 
