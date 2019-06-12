@@ -13,7 +13,6 @@
   let supportsTransferable = false
   const test = fn => { try { fn() } catch (e) {} }
   const ponyfill = window.WebStreamsPolyfill || {}
-  const once = { once: true }
   const isSecureContext = window.isSecureContext
   let useBlobFallback = /constructor/i.test(window.HTMLElement) || !!window.safari
   const downloadStrategy = isSecureContext || 'MozAppearance' in document.documentElement.style
@@ -45,7 +44,7 @@
     iframe.postMessage = (...args) => iframe.contentWindow.postMessage(...args)
     iframe.addEventListener('load', () => {
       iframe.loaded = true
-    }, once)
+    }, { once: true })
     document.body.appendChild(iframe)
     return iframe
   }
@@ -85,22 +84,12 @@
     return popup
   }
 
-  /**
-   * Destroys a channel and return null
-   *
-   * @param  {MessageChannel} channel [description]
-   * @return {null}         [description]
-   */
-  function destroyChannel (channel) {
-    channel.port1.onmessage = null
-    channel.port1.close()
-    channel.port2.close()
-    return null
-  }
-
   try {
     // We can't look for service worker since it may still work on http
-    !!new Response(new ReadableStream())
+    new Response(new ReadableStream())
+    if (isSecureContext && !('serviceWorker' in navigator)) {
+      useBlobFallback = true
+    }
   } catch (err) {
     useBlobFallback = true
   }
@@ -232,7 +221,7 @@
               }
             }
 
-            // We never remove this iframes b/c it can interrupt saveAs
+            // We never remove this iframes b/c it can interrupt saving
             makeIframe(evt.data.download)
           }
         }
@@ -243,20 +232,13 @@
       } else {
         mitmTransporter.addEventListener('load', () => {
           mitmTransporter.postMessage(...args)
-        }, once)
+        }, { once: true })
       }
     }
 
     let chunks = []
 
     return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
-      start () {
-        // is called immediately, and should perform any actions
-        // necessary to acquire access to the underlying sink.
-        // If this process is asynchronous, it can return a promise
-        // to signal success or failure.
-        // return setupChannel()
-      },
       write (chunk) {
         if (useBlobFallback) {
           // Safari... The new IE6
@@ -293,15 +275,17 @@
           link.href = URL.createObjectURL(blob)
           link.download = filename
           link.click()
-          return
+        } else {
+          channel.port1.postMessage('end')
         }
-        channel.port1.postMessage('end')
-        channel = destroyChannel(channel)
       },
       abort () {
         chunks = []
         channel.port1.postMessage('abort')
-        channel = destroyChannel(channel)
+        channel.port1.onmessage = null
+        channel.port1.close()
+        channel.port2.close()
+        channel = null
       }
     }, opts.writableStrategy)
   }
