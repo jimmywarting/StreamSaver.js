@@ -85,19 +85,6 @@
     return popup
   }
 
-  /**
-   * Destroys a channel and return null
-   *
-   * @param  {MessageChannel} channel [description]
-   * @return {null}         [description]
-   */
-  function destroyChannel (channel) {
-    channel.port1.onmessage = null
-    channel.port1.close()
-    channel.port2.close()
-    return null
-  }
-
   try {
     // We can't look for service worker since it may still work on http
     !!new Response(new ReadableStream())
@@ -232,7 +219,7 @@
               }
             }
 
-            // We never remove this iframes b/c it can interrupt saveAs
+            // We never remove this iframes b/c it can interrupt saving
             makeIframe(evt.data.download)
           }
         }
@@ -250,13 +237,6 @@
     let chunks = []
 
     return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
-      start () {
-        // is called immediately, and should perform any actions
-        // necessary to acquire access to the underlying sink.
-        // If this process is asynchronous, it can return a promise
-        // to signal success or failure.
-        // return setupChannel()
-      },
       write (chunk) {
         if (useBlobFallback) {
           // Safari... The new IE6
@@ -293,15 +273,17 @@
           link.href = URL.createObjectURL(blob)
           link.download = filename
           link.click()
-          return
+        } else {
+          channel.port1.postMessage('end')
         }
-        channel.port1.postMessage('end')
-        channel = destroyChannel(channel)
       },
       abort () {
         chunks = []
         channel.port1.postMessage('abort')
-        channel = destroyChannel(channel)
+        channel.port1.onmessage = null
+        channel.port1.close()
+        channel.port2.close()
+        channel = null
       }
     }, opts.writableStrategy)
   }
