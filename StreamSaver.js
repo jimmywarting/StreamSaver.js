@@ -203,10 +203,9 @@
       }
 
       channel.port1.onmessage = evt => {
-        // Readable stream was cancelled by user
-        if (evt.data.userAborted) {
-          streamSaver.isUserAborted = true;
-        }
+        // Track whether readable stream was cancelled by user
+        streamSaver.isUserAborted = !!evt.data.userAborted;
+        
         // Service worker sent us a link that we should open.
         if (evt.data.download) {
           // Special treatment for popup...
