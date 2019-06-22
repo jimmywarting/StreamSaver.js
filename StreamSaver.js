@@ -201,6 +201,9 @@
       }
 
       channel.port1.onmessage = evt => {
+        if (evt.data.userAborted) {
+          window.isUserAborted = true;
+        }
         // Service worker sent us a link that we should open.
         if (evt.data.download) {
           // Special treatment for popup...
