@@ -25,7 +25,7 @@
     WritableStream: window.WritableStream || ponyfill.WritableStream,
     supported: true,
     version: { full: '2.0.0', major: 2, minor: 0, dot: 0 },
-    mitm: 'https://eschaefer.github.io/StreamSaver.js/mitm.html?version=2.0.0',
+    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0',
     isUserAborted,
   }
 
