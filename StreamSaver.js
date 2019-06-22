@@ -11,6 +11,7 @@
 
   let mitmTransporter = null
   let supportsTransferable = false
+  let isUserAborted = false
   const test = fn => { try { fn() } catch (e) {} }
   const ponyfill = window.WebStreamsPolyfill || {}
   const isSecureContext = window.isSecureContext
@@ -202,7 +203,7 @@
 
       channel.port1.onmessage = evt => {
         if (evt.data.userAborted) {
-          window.isUserAborted = true;
+          isUserAborted = true;
         }
         // Service worker sent us a link that we should open.
         if (evt.data.download) {
@@ -289,6 +290,9 @@
         channel.port1.close()
         channel.port2.close()
         channel = null
+      },
+      isAbortedByUser () {
+        return isUserAborted
       }
     }, opts.writableStrategy)
   }
