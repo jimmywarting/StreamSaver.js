@@ -21,12 +21,12 @@
     : 'navigate'
 
   const streamSaver = {
-    isUserAborted,
     createWriteStream,
     WritableStream: window.WritableStream || ponyfill.WritableStream,
     supported: true,
     version: { full: '2.0.0', major: 2, minor: 0, dot: 0 },
-    mitm: 'https://eschaefer.github.io/StreamSaver.js/mitm.html?version=2.0.0'
+    mitm: 'https://eschaefer.github.io/StreamSaver.js/mitm.html?version=2.0.0',
+    isUserAborted,
   }
 
   /**
@@ -203,6 +203,7 @@
       }
 
       channel.port1.onmessage = evt => {
+        // Readable stream was cancelled by user
         if (evt.data.userAborted) {
           streamSaver.isUserAborted = true;
         }

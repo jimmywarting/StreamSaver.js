@@ -38,6 +38,7 @@ self.onmessage = event => {
       metadata[0] = evt.data.readableStream
     }
   } else {
+    port.postMessage({ userAborted: false })
     metadata[0] = createStream(port)
   }
 
