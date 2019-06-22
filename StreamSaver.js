@@ -21,6 +21,7 @@
     : 'navigate'
 
   const streamSaver = {
+    isUserAborted,
     createWriteStream,
     WritableStream: window.WritableStream || ponyfill.WritableStream,
     supported: true,
@@ -203,7 +204,7 @@
 
       channel.port1.onmessage = evt => {
         if (evt.data.userAborted) {
-          isUserAborted = true;
+          streamSaver.isUserAborted = true;
         }
         // Service worker sent us a link that we should open.
         if (evt.data.download) {
@@ -290,9 +291,6 @@
         channel.port1.close()
         channel.port2.close()
         channel = null
-      },
-      isAbortedByUser () {
-        return isUserAborted
       }
     }, opts.writableStrategy)
   }
