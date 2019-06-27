@@ -42,8 +42,6 @@ StreamSaver in it's simplest form
 
 Some browser have ReadableStream but not WritableStream. [web-streams-polyfill](https://github.com/MattiasBuelens/web-streams-polyfill) can fix this gap. It's better to load the ponyfill instead of the polyfill and override the existing implementation because StreamSaver works better when a native ReadableStream is transferable to the service worker. hopefully [MattiasBuelens](https://github.com/MattiasBuelens) will fix the missing implementations instead of overriding the existing. If you think you can help out here is the [issue](https://github.com/MattiasBuelens/web-streams-polyfill/issues/20)
 
-There a some settings you can apply to StreamSaver to configure what it should use
-
 ## Best practice
 
 **Use https** if you can. That way you don't have to open the man in the middle
@@ -69,6 +67,9 @@ window.onbeforeunload = evt => {
 ```
 Note that when using insecure context StreamSaver will navigate to the download url instead of using an hidden iframe to initiate the download, this will trigger the `onbefureunload` event when the download starts, but it will not call the `onunload` event... In secure context you can add this handler immediately. Otherwise this has to be added sometime later.
 
+# Configuration
+
+There a some few settings you can apply to StreamSaver to configure what it should use
 
 ```js
 // StreamSaver can detect and use the Ponyfill that is loaded from the cdn.
