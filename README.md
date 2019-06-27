@@ -21,7 +21,7 @@ Getting started
 StreamSaver in it's simplest form
 ```html
 <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
-<script src="StreamSaver.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js"></script>
 <script>
 	import streamSaver from 'streamsaver'
 	const streamSaver = require('streamsaver')
