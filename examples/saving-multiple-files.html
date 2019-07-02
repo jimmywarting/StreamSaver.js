@@ -48,14 +48,12 @@
           stream: () => blob.stream()
         }
 
-        // Ideally world i would just have done something like TextEncoderStream
-        // where you would get { readable writable } = new ZIP()
-        //
-        // readable would be piped to streamsaver, and the writer would accept
-        // file-like object, but that made it dependent on WritableStream...
-        //
+        // In a ideall world i would just have used a TransformStream
+        // where you would get `{ readable writable } = new TransformStream()`
+        // `readable` would be piped to streamsaver, and the writer would accept
+        // file-like object, but that made it dependent on TransformStream and WritableStream
         // So i built ZIP-Stream simular to a ReadbleStream but you enqueue
-        // file-like objects meaning it should have at at the very least name, stream()
+        // file-like objects meaning it should have at at the very least { name, stream() }
         //
         // it supports pull() too that gets called when it ask for more files.
         //
@@ -85,6 +83,7 @@
           return readableZipStream.pipeTo(fileStream).then(() => console.log('done writing'))
         }
 
+		// less optimized
         window.writer = fileStream.getWriter()
 
         const reader = readableZipStream.getReader()
