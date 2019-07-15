@@ -51,8 +51,10 @@ on user interaction**. Even if you don't have any data ready - this is so that y
 Another benefit of using https is that the mitm-iframe can ping the service worker to prevent it from going idle. (worker goes idle after 30 sec in firefox, 5 minutes in blink) but also this won't mater if the browser supports [transferable streams](https://github.com/whatwg/streams/blob/master/transferable-streams-explainer.md) throught postMessage since service worker don't have to handle any logic. (the stream that you transfer to the service worker will be the stream we respond with)
 
 **Handle unload event** when user leaves the page. The download gets broken when you leave the page.
+Because it looks like a regular native download process some might think that it's okey to leave the page beforehand since it's is downloading in the background directly from some a server, but it isn't.
 
 ```js
+// abort so it dose not look stuck
 window.onunload = () => {
   writableStream.abort()
   // also possible to call abort on the writer you got from `getWriter()`
@@ -98,7 +100,7 @@ In the wild
 
 How dose it work?
 =====================
-There is no magical `saveAs()` function that saves a stream, file or blob.
+There is no magical `saveAs()` function that saves a stream, file or blob. (at least not if/when native-filesystem api becomes avalible)
 The way we mostly save Blobs/Files today is with the help of [Object URLs](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL) and  [`a[download]`][5] attribute
 [FileSaver.js][2] takes advantage of this and create a convenient `saveAs(blob, filename)`. fantastic! But you can't create a objectUrl from a stream and attach
 it to a link...
@@ -109,8 +111,8 @@ link.download = 'filename'
 link.click() // Save
 ```
 So the one and only other solution is to do what the server does: Send a stream
-with Content-Disposition header to tell the browser to save the file.
-But we don't have a server! So the solution is to create a service worker
+with `Content-Disposition` header to tell the browser to save the file.
+But we don't have a server or the content isn't on a server! So the solution is to create a service worker
 that can intercept request and use [respondWith()][4] and act as a server.<br>
 But a service workers are only allowed in secure contexts and it requires some effort to put up. Most of the time you are working in the main thread and the service worker are only alive for < 5 minutes before it goes idle.<br>
 
