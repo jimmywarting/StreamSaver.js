@@ -134,7 +134,7 @@
 
     let bytesWritten = 0 // by StreamSaver.js (not the service worker)
     let downloadUrl = null
-    let channel = new MessageChannel()
+    let channel = null
     let ts = null
 
     // normalize arguments
@@ -153,6 +153,8 @@
     if (!useBlobFallback) {
       loadTransporter()
 
+      channel = new MessageChannel()
+      
       // Make filename RFC5987 compatible
       filename = encodeURIComponent(filename.replace(/\//g, ':'))
         .replace(/['()]/g, escape)
