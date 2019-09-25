@@ -20,16 +20,17 @@
       $start.onclick = () => {
         const fileStream = streamSaver.createWriteStream('archive.zip')
 
-        const file1 = new File(['file1 content'], '/streamsaver-zip-example/file1.txt')
+        const file1 = new File(['file1 content'], 'streamsaver-zip-example/file1.txt')
 
         // File Like object works too
         const file2 = {
-          name: '/streamsaver-zip-example/file2.txt',
+          name: 'streamsaver-zip-example/file2.txt',
           stream () {
             // if you want to play it cool and use new api's
             //
             // const { readable, writable } = new TextEncoderStream()
             // writable.write('file2 content')
+			// writable.close()
             // return readable
 
             return new ReadableStream({
@@ -44,7 +45,7 @@
         const blob = new Blob(['support blobs too'])
 
         const file3 = {
-          name: '/streamsaver-zip-example/blob-example.txt',
+          name: 'streamsaver-zip-example/blob-example.txt',
           stream: () => blob.stream()
         }
 
@@ -59,21 +60,26 @@
         //
         // NOTE: My zip library can't generate zip's over 4gb and has no compresseion
         //       it was built solo for the purpus of saving multiple files in browser
+		//
+		//       windows gets confused when file & folders starts with /
         const readableZipStream = new ZIP({
           start (ctrl) {
             ctrl.enqueue(file1)
             ctrl.enqueue(file2)
             ctrl.enqueue(file3)
-            ctrl.enqueue({name: '/streamsaver-zip-example/empty folder', directory: true})
+            ctrl.enqueue({name: 'streamsaver-zip-example/empty folder', directory: true})
             // ctrl.close()
           },
           async pull (ctrl) {
+			// Gets executed everytime zip.js asks for more data
             const url = 'https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4'
             const res = await fetch(url)
             const stream = () => res.body
-            const name = '/streamsaver-zip-example/cat.mp4'
+            const name = 'streamsaver-zip-example/cat.mp4'
 
             ctrl.enqueue({ name, stream })
+			  
+			// if (done adding all files)
             ctrl.close()
           }
         })
@@ -84,8 +90,7 @@
         }
 
 		// less optimized
-        window.writer = fileStream.getWriter()
-
+        const writer = fileStream.getWriter()
         const reader = readableZipStream.getReader()
         const pump = () => reader.read()
           .then(res => res.done ? writer.close() : writer.write(res.value).then(pump))
