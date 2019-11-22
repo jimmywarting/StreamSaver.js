@@ -14,7 +14,8 @@
   const test = fn => { try { fn() } catch (e) {} }
   const ponyfill = window.WebStreamsPolyfill || {}
   const isSecureContext = window.isSecureContext
-  let useBlobFallback = /constructor/i.test(window.HTMLElement) || !!window.safari
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  let useBlobFallback = /constructor/i.test(window.HTMLElement) || !!window.safari || isIOS
   const downloadStrategy = isSecureContext || 'MozAppearance' in document.documentElement.style
     ? 'iframe'
     : 'navigate'
