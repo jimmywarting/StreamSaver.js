@@ -132,6 +132,11 @@
       readableStrategy: undefined
     }
 
+    let bytesWritten = 0 // by StreamSaver.js (not the service worker)
+    let downloadUrl = null
+    let channel = null
+    let ts = null
+
     // normalize arguments
     if (Number.isFinite(options)) {
       [ size, options ] = [ options, size ]
@@ -148,10 +153,8 @@
     if (!useBlobFallback) {
       loadTransporter()
 
-      var bytesWritten = 0 // by StreamSaver.js (not the service worker)
-      var downloadUrl = null
-      var channel = new MessageChannel()
-
+      channel = new MessageChannel()
+      
       // Make filename RFC5987 compatible
       filename = encodeURIComponent(filename.replace(/\//g, ':'))
         .replace(/['()]/g, escape)
@@ -190,7 +193,7 @@
             }
           }
         }
-        var ts = new streamSaver.TransformStream(
+        ts = new streamSaver.TransformStream(
           transformer,
           opts.writableStrategy,
           opts.readableStrategy

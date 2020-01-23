@@ -21,10 +21,10 @@ Getting started
 StreamSaver in it's simplest form
 ```html
 <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
-<script src="StreamSaver.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js"></script>
 <script>
-	import streamSaver from 'StreamSaver'
-	const streamSaver = require('StreamSaver')
+	import streamSaver from 'streamsaver'
+	const streamSaver = require('streamsaver')
 	const streamSaver = window.streamSaver
 </script>
 <script>
@@ -42,8 +42,6 @@ StreamSaver in it's simplest form
 
 Some browser have ReadableStream but not WritableStream. [web-streams-polyfill](https://github.com/MattiasBuelens/web-streams-polyfill) can fix this gap. It's better to load the ponyfill instead of the polyfill and override the existing implementation because StreamSaver works better when a native ReadableStream is transferable to the service worker. hopefully [MattiasBuelens](https://github.com/MattiasBuelens) will fix the missing implementations instead of overriding the existing. If you think you can help out here is the [issue](https://github.com/MattiasBuelens/web-streams-polyfill/issues/20)
 
-There a some settings you can apply to StreamSaver to configure what it should use
-
 ## Best practice
 
 **Use https** if you can. That way you don't have to open the man in the middle
@@ -53,8 +51,10 @@ on user interaction**. Even if you don't have any data ready - this is so that y
 Another benefit of using https is that the mitm-iframe can ping the service worker to prevent it from going idle. (worker goes idle after 30 sec in firefox, 5 minutes in blink) but also this won't mater if the browser supports [transferable streams](https://github.com/whatwg/streams/blob/master/transferable-streams-explainer.md) throught postMessage since service worker don't have to handle any logic. (the stream that you transfer to the service worker will be the stream we respond with)
 
 **Handle unload event** when user leaves the page. The download gets broken when you leave the page.
+Because it looks like a regular native download process some might think that it's okey to leave the page beforehand since it's is downloading in the background directly from some a server, but it isn't.
 
 ```js
+// abort so it dose not look stuck
 window.onunload = () => {
   writableStream.abort()
   // also possible to call abort on the writer you got from `getWriter()`
@@ -69,6 +69,9 @@ window.onbeforeunload = evt => {
 ```
 Note that when using insecure context StreamSaver will navigate to the download url instead of using an hidden iframe to initiate the download, this will trigger the `onbefureunload` event when the download starts, but it will not call the `onunload` event... In secure context you can add this handler immediately. Otherwise this has to be added sometime later.
 
+# Configuration
+
+There a some few settings you can apply to StreamSaver to configure what it should use
 
 ```js
 // StreamSaver can detect and use the Ponyfill that is loaded from the cdn.
@@ -95,9 +98,9 @@ In the wild
 - [Adding ID3 tag to mp3 file on the fly](https://egoroof.ru/browser-id3-writer/stream) - by [Artyom Egorov](https://github.com/egoroof)
 
 
-How dose it work?
+How does it work?
 =====================
-There is no magical `saveAs()` function that saves a stream, file or blob.
+There is no magical `saveAs()` function that saves a stream, file or blob. (at least not if/when native-filesystem api becomes avalible)
 The way we mostly save Blobs/Files today is with the help of [Object URLs](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL) and  [`a[download]`][5] attribute
 [FileSaver.js][2] takes advantage of this and create a convenient `saveAs(blob, filename)`. fantastic! But you can't create a objectUrl from a stream and attach
 it to a link...
@@ -108,8 +111,8 @@ link.download = 'filename'
 link.click() // Save
 ```
 So the one and only other solution is to do what the server does: Send a stream
-with Content-Disposition header to tell the browser to save the file.
-But we don't have a server! So the solution is to create a service worker
+with `Content-Disposition` header to tell the browser to save the file.
+But we don't have a server or the content isn't on a server! So the solution is to create a service worker
 that can intercept request and use [respondWith()][4] and act as a server.<br>
 But a service workers are only allowed in secure contexts and it requires some effort to put up. Most of the time you are working in the main thread and the service worker are only alive for < 5 minutes before it goes idle.<br>
 
