@@ -40,7 +40,7 @@
           mediaRecorder.stop()
           writer.close()
         }
-        mediaRecorder.ondataavailable = evt => console.log(evt.data)
+        mediaRecorder.ondataavailable = evt => writer.write(evt.data)
         mediaRecorder.start()
       }
 
