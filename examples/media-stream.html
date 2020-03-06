@@ -31,7 +31,7 @@
         const mediaRecorder = new MediaRecorder(stream)
         const ext = mediaRecorder.mimeType.split(';')[0].split('/')[1]
         const { readable, writable } = new TransformStream({
-           transform: (chunk, ctrl) => chunk.arrayBuffer().then(b => ctrl.enqueue(new Uint8Array(b), console.log(b)))
+           transform: (chunk, ctrl) => chunk.arrayBuffer().then(b => ctrl.enqueue(new Uint8Array(b)))
         })
         const writer = writable.getWriter()
         readable.pipeTo(streamSaver.createWriteStream('media.' + ext))
