@@ -38,7 +38,7 @@
         $close.onclick = event => {
           stopStream(stream)
           mediaRecorder.stop()
-          writer.close()
+          writable.close()
         }
         mediaRecorder.ondataavailable = evt => writer.write(evt.data)
         mediaRecorder.start()
