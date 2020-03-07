@@ -35,11 +35,15 @@
         })
         const writer = writable.getWriter()
         readable.pipeTo(streamSaver.createWriteStream('media.' + ext))
+
         $close.onclick = event => {
           stopStream(stream)
           mediaRecorder.stop()
-          writable.close()
+          setTimeout(() => {
+            writer.close()
+          }, 1000)
         }
+
         mediaRecorder.ondataavailable = evt => writer.write(evt.data)
         mediaRecorder.start()
       }
