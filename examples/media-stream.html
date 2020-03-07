@@ -17,50 +17,36 @@
     <label><input id="$vid" type="checkbox"> Use Webcam</label>
     <label><input id="$aud" type="checkbox"> Use Microphone</label>
     <button id="$start">Start</button>
+    <button id="$close">Close</button>
 
     <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jimmywarting/browser-su@master/build/permissions.js"></script>
     <script src="../StreamSaver.js"></script>
     <script>
-        $vid.disabled = $aud.disabled = $start.disabled = !window.isSecureContext
-        $start.onclick = () => {
-          permission = { name: 'userMedia', video: $vid.checked, audio: $aud.checked }
+      $vid.disabled = $aud.disabled = $start.disabled = !window.isSecureContext
+      $start.onclick = async () => {
+        const permission = { name: 'userMedia', video: $vid.checked, audio: $aud.checked }
+        const stream = await su.request(permission)
+        const mediaRecorder = new MediaRecorder(stream)
+        const ext = mediaRecorder.mimeType.split(';')[0].split('/')[1]
+        const { readable, writable } = new TransformStream({
+           transform: (chunk, ctrl) => chunk.arrayBuffer().then(b => ctrl.enqueue(new Uint8Array(b)))
+        })
+        const writer = writable.getWriter()
+        readable.pipeTo(streamSaver.createWriteStream('media.' + ext))
 
-          su.request(permission).then(stream => {
-            let fr = new FileReader()
-            let mediaRecorder = new MediaRecorder(stream)
-            let chunks = Promise.resolve()
-
-            mediaRecorder.start()
-            $close.onclick = event => {
-              stopStream(stream)
-              mediaRecorder.stop()
-              setTimeout(()=>{
-                chunks.then(evt => {
-                  fileStream.close()
-                })
-              }, 1000)
-            }
-            mediaRecorder.ondataavailable = evt => {
-              let blob = evt.data
-
-              chunks = chunks.then(() => new Promise(resolve => {
-                fr.onload = () => {
-                  // Should we let the serviceWorker be able to accept
-                  // anything other then uint8array? ReadableStream don't seems
-                  // so happy with anything else... but could load of some work
-                  // of the main thread +1
-                  let uint8array = new Uint8Array(fr.result)
-                  myFile.write(uint8array)
-                  resolve()
-                }
-                fr.readAsArrayBuffer(blob)
-              }))
-            }
-          })
+        $close.onclick = event => {
+          stopStream(stream)
+          mediaRecorder.stop()
+          setTimeout(() => {
+            writer.close()
+          }, 1000)
         }
 
+        mediaRecorder.ondataavailable = evt => writer.write(evt.data)
+        mediaRecorder.start()
+      }
 
       function stopStream (stream) {
         let tracks = [
@@ -68,8 +54,7 @@
           ...stream.getVideoTracks()
         ]
 
-        for(let track of tracks)
-        track.stop()
+        for (const track of tracks) track.stop()
       }
     </script>
   </body>
