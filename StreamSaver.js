@@ -219,6 +219,7 @@
           } else {
             if (mitmTransporter.isPopup) {
               mitmTransporter.remove()
+              mitmTransporter = null
               // Special case for firefox, they can keep sw alive with fetch
               if (downloadStrategy === 'iframe') {
                 makeIframe(streamSaver.mitm)
