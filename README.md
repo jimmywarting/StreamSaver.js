@@ -18,8 +18,8 @@ It is perfect for webapps that need to save really large amounts of data created
 on the client-side, where the RAM is really limited, like on mobile devices.
 
 **If the file you are trying to save comes from the cloud/server** use it instead
-of emulating what the browser dose to save files on the disk using StreamSaver.
-Add those extra Response headers and **don't use AJAX** to get it. FileSaver have
+of emulating what the browser does to save files on the disk using StreamSaver.
+Add those extra Response headers and **don't use AJAX** to get it. FileSaver has
 a good [wiki](https://github.com/eligrey/FileSaver.js/wiki/Saving-a-remote-file)
 about using headers. If you can't change the headers then you may use StreamSaver
 as a last resource. FileSaver, streamsaver and others alike are mostly for client
@@ -39,7 +39,7 @@ StreamSaver in it's simplest form
 <script>
   const uInt8 = new TextEncoder().encode('StreamSaver is awesome')
 
-  // streamSaver.createWriteStream() returns a wirtable byte stream
+  // streamSaver.createWriteStream() returns a writable byte stream
   // The WritableStream only accepts Uint8Array chunks
   // (no other typed arrays, arrayBuffers or strings are allowed)
   const fileStream = streamSaver.createWriteStream('filename.txt', {
@@ -53,7 +53,7 @@ StreamSaver in it's simplest form
     writer.write(uInt8)
     writer.close()
   } else {
-    // using Response can be a grate tool to convert
+    // using Response can be a great tool to convert
     // mostly anything (blob, string, buffers) into a byte stream
     // that can be piped to StreamSaver
     //
