@@ -144,11 +144,11 @@
     // normalize arguments
     if (Number.isFinite(options)) {
       [ size, options ] = [ options, size ]
-      console.warn('[StreamSaver] Depricated pass an object as 2nd argument when creating a write stream')
+      console.warn('[StreamSaver] Deprecated pass an object as 2nd argument when creating a write stream')
       opts.size = size
       opts.writableStrategy = options
     } else if (options && options.highWaterMark) {
-      console.warn('[StreamSaver] Depricated pass an object as 2nd argument when creating a write stream')
+      console.warn('[StreamSaver] Deprecated pass an object as 2nd argument when creating a write stream')
       opts.size = size
       opts.writableStrategy = options
     } else {
@@ -184,7 +184,7 @@
           // This transformer & flush method is only used by insecure context.
           transform (chunk, controller) {
             if (!(chunk instanceof Uint8Array)) {
-              throw new TypeError('Can only wirte Uint8Arrays')
+              throw new TypeError('Can only write Uint8Arrays')
             }
             bytesWritten += chunk.length
             controller.enqueue(chunk)
@@ -252,7 +252,7 @@
     return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
       write (chunk) {
         if (!(chunk instanceof Uint8Array)) {
-          throw new TypeError('Can only wirte Uint8Arrays')
+          throw new TypeError('Can only write Uint8Arrays')
         }
         if (useBlobFallback) {
           // Safari... The new IE6
