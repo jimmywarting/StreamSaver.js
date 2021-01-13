@@ -99,7 +99,7 @@
   }
 
   test(() => {
-    // Transfariable stream was first enabled in chrome v73 behind a flag
+    // Transferable stream was first enabled in chrome v73 behind a flag
     const { readable } = new TransformStream()
     const mc = new MessageChannel()
     mc.port1.postMessage(readable, [readable])
@@ -125,7 +125,7 @@
   /**
    * @param  {string} filename filename that should be used
    * @param  {object} options  [description]
-   * @param  {number} size     depricated
+   * @param  {number} size     deprecated
    * @return {WritableStream<Uint8Array>}
    */
   function createWriteStream (filename, options, size) {
@@ -258,7 +258,7 @@
           // Safari... The new IE6
           // https://github.com/jimmywarting/StreamSaver.js/issues/69
           //
-          // even doe it has everything it fails to download anything
+          // even though it has everything it fails to download anything
           // that comes from the service worker..!
           chunks.push(chunk)
           return
@@ -273,7 +273,7 @@
 
         // TODO: Kind of important that service worker respond back when
         // it has been written. Otherwise we can't handle backpressure
-        // EDIT: Transfarable streams solvs this...
+        // EDIT: Transferable streams solves this...
         channel.port1.postMessage(chunk)
         bytesWritten += chunk.length
 
