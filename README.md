@@ -17,12 +17,12 @@ StreamSaver.js is the solution to saving streams on the client-side.
 It is perfect for webapps that need to save really large amounts of data created
 on the client-side, where the RAM is really limited, like on mobile devices.
 
-**If the file you are trying to save comes from the cloud/server** use it instead
+**If the file you are trying to save comes from the cloud/server** use FileSaver instead
 of emulating what the browser does to save files on the disk using StreamSaver.
 Add those extra Response headers and **don't use AJAX** to get it. FileSaver has
 a good [wiki](https://github.com/eligrey/FileSaver.js/wiki/Saving-a-remote-file)
 about using headers. If you can't change the headers then you may use StreamSaver
-as a last resource. FileSaver, streamsaver and others alike are mostly for client
+as a last resort. FileSaver, streamsaver and others alike are mostly for client
 generated content inside the browser.
 
 Getting started
