@@ -16,6 +16,7 @@
   let supportsTransferable = false
   const test = fn => { try { fn() } catch (e) {} }
   const ponyfill = global.WebStreamsPolyfill || {}
+  const mitmUrl = global.MitmUrl || {}
   const isSecureContext = global.isSecureContext
   // TODO: Must come up with a real detection test (#69)
   let useBlobFallback = /constructor/i.test(global.HTMLElement) || !!global.safari || !!global.WebKitPoint
@@ -28,7 +29,7 @@
     WritableStream: global.WritableStream || ponyfill.WritableStream,
     supported: true,
     version: { full: '2.0.5', major: 2, minor: 0, dot: 5 },
-    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
+    mitm: mitmUrl || 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
   }
 
   /**
