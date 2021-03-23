@@ -18,7 +18,7 @@
       $start.onclick = () => {
         const blob = new Blob(['StreamSaver is awesome'])
         const fileStream = streamSaver.createWriteStream('sample.txt', {
-          size: blob.size // Makes the procentage visiable in the download
+          size: blob.size // Makes the percentage visiable in the download
         })
 
         // One quick alternetive way if you don't want the hole blob.js thing:
