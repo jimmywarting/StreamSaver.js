@@ -13,7 +13,7 @@ const map = new Map()
 // This should be called once per download
 // Each event has a dataChannel that the data will be piped through
 self.onmessage = event => {
-  // We send a heartbeat every x secound to keep the
+  // We send a heartbeat every x second to keep the
   // service worker alive if a transferable stream is not sent
   if (event.data === 'ping') {
     return
@@ -29,7 +29,7 @@ self.onmessage = event => {
 
   // Note to self:
   // old streamsaver v1.2.0 might still use `readableStream`...
-  // but v2.0.0 will always transfer the stream throught MessageChannel #94
+  // but v2.0.0 will always transfer the stream through MessageChannel #94
   if (event.data.readableStream) {
     metadata[0] = event.data.readableStream
   } else if (event.data.transferringReadable) {
