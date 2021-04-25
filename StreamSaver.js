@@ -281,7 +281,7 @@
           location.href = downloadUrl
           downloadUrl = null
         }
-      },
+      }, 
       close () {
         if (useBlobFallback) {
           const blob = new Blob(chunks, { type: 'application/octet-stream; charset=utf-8' })
