@@ -23,5 +23,11 @@
     "bugs": {
         "url": "https://github.com/jimmywarting/StreamSaver.js/issues"
     },
-    "homepage": "https://github.com/jimmywarting/StreamSaver.js#readme"
+    "homepage": "https://github.com/jimmywarting/StreamSaver.js#readme",
+	"funding": [
+      {
+        "type": "github",
+        "url": "https://github.com/sponsors/jimmywarting"
+      }
+    ]
 }
