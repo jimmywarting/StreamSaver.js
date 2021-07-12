@@ -1,5 +1,13 @@
-StreamSaver.js
-==============
+StreamSaver.js (legacy-ish)
+===========================
+
+... Don't worry it's not deprecated. It's still maintained and i still recommend 
+using this when needed. Just want to let you know that there is this new native way
+to save files to the HD: https://wicg.github.io/native-file-system which is more
+or less going to make FileSaver, StreamSaver and similar packages a bit obsolete
+in the feature, it'still in a experimental stage and not implemented by all browser.
+That is why I also built [native-file-system-adapter](https://github.com/jimmywarting/native-file-system-adapter)
+so you can have it in all Browsers, Deno, and NodeJS with different storages
 
 [![npm version][npm-image]][npm-url]
 
