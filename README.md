@@ -17,7 +17,7 @@ StreamSaver.js is the solution to saving streams on the client-side.
 It is perfect for webapps that need to save really large amounts of data created
 on the client-side, where the RAM is really limited, like on mobile devices.
 
-**If the file you are trying to save comes from the cloud/server** use FileSaver instead
+**If the file you are trying to save comes from the cloud/server** use the server instead
 of emulating what the browser does to save files on the disk using StreamSaver.
 Add those extra Response headers and **don't use AJAX** to get it. FileSaver has
 a good [wiki](https://github.com/eligrey/FileSaver.js/wiki/Saving-a-remote-file)
