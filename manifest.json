@@ -1,0 +1,25 @@
+{
+  "name": "StreamSaver.js extension",
+  "description": "StreamSaver.js Chromium extension",
+  "version": "2.0",
+  "manifest_version": 3,
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "index.html",
+        "mitm.html",
+        "mitm.js",
+        "script.js",
+        "ponyfill.min.js",
+        "StreamSaver.min.js",
+        "StreamSaver.js"
+      ],
+      "matches": [ "http://example.com/*" ],
+      "extensions": [ ]
+    }
+  ],
+  "action": {}
+}
