@@ -25,6 +25,7 @@
 
   const streamSaver = {
     createWriteStream,
+	setMitmUrl,
     WritableStream: global.WritableStream || ponyfill.WritableStream,
     supported: true,
     version: { full: '2.0.5', major: 2, minor: 0, dot: 5 },
@@ -302,6 +303,13 @@
         channel = null
       }
     }, opts.writableStrategy)
+  }
+
+  /**
+   * @param {string} url
+   */
+  function setMitmUrl(url) {
+	  streamSaver.mitm = url;
   }
 
   return streamSaver
