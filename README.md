@@ -105,13 +105,14 @@ Note that when using insecure context StreamSaver will navigate to the download 
 
 # Configuration
 
+By default, `https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0` will be used to create the iframe in secure context. But it could be unavailable when using Firefox or an environment where `github.io` can not be accessed, then you need to config a custom `mitm.html` by yourself.
+
 There a some few settings you can apply to StreamSaver to configure what it should use
 
 ```js
 // StreamSaver can detect and use the Ponyfill that is loaded from the cdn.
-streamSaver.WritableStream = streamSaver.WritableStream
-streamSaver.TransformStream = streamSaver.TransformStream
-// if you decide to host mitm + sw yourself
+streamSaver.WritableStream = streamSaver.WritableStream || ponyfill.WritableStream
+// if you decide to host mitm + sw yourself, notice you need to make sure a `sw.js` file be available too.
 streamSaver.mitm = 'https://example.com/custom_mitm.html'
 ```
 
