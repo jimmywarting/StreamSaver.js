@@ -1,3 +1,5 @@
+/*! streamsaver. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
+
 /* global chrome location ReadableStream define MessageChannel TransformStream */
 
 ;((name, definition) => {
