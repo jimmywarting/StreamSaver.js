@@ -60,6 +60,11 @@ function registerWorker() {
 function onMessage (event) {
   let { data, ports, origin } = event
 
+  // Ignore messages other than from iframe parent (e.g. extensions)
+  if (event.source !== window.parent) {
+    return
+  }
+  
   // It's important to have a messageChannel, don't want to interfere
   // with other simultaneous downloads
   if (!ports || !ports.length) {
