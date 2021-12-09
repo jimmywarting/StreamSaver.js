@@ -115,7 +115,7 @@ function createWriter (underlyingSource) {
           ctrl.enqueue(data.array)
         },
         writeFooter () {
-          if (compressedLength && compressedLength >= 0xffffffff) {
+          if (zipObject.compressedLength && zipObject.compressedLength >= 0xffffffff) {
             header.view.setUint16(0, 45)
             zip64 = true
           }
@@ -139,9 +139,10 @@ function createWriter (underlyingSource) {
             zip64Extra.view.setBigUint64(12, BigInt(zipObject.compressedLength), true)
             zip64Extra.view.setBigUint64(20, BigInt(files[name].offset), true)
             files[name].extraArray = zip64Extra.array
-          } else {
+          } else if (zipObject.crc) {
             zipObject.header.view.setUint32(14, zipObject.compressedLength, true)
             zipObject.header.view.setUint32(18, zipObject.uncompressedLength, true)
+            footer.view.setUint32(4, zipObject.crc.get(), true)
             footer.view.setUint32(8, zipObject.compressedLength, true)
             footer.view.setUint32(12, zipObject.uncompressedLength, true)
 
@@ -169,8 +170,8 @@ function createWriter (underlyingSource) {
   function closeZip () {
     var length = 0
     var index = 0
-    var indexFilename, file
-    var zip64 = false, cdOffset = file.offset
+    var indexFilename, file, cdOffset
+    var zip64 = false 
     for (indexFilename = 0; indexFilename < filenames.length; indexFilename++) {
       file = files[filenames[indexFilename]]
       length += 46 + file.nameBuf.length + file.comment.length 
@@ -179,7 +180,7 @@ function createWriter (underlyingSource) {
         zip64 = true
       }
     }
-
+    cdOffset = file.offset
     if (cdOffset + length >= 0xffffffff || filenames.length >= 0xffff)
       zip64 = true
 
@@ -202,12 +203,12 @@ function createWriter (underlyingSource) {
         data.view.setUint32(index + 42, file.offset, true)
       
       data.array.set(file.nameBuf, index + 46)
-      let extraLength = 0 
+      var extraLength = 0 
       if (file.extraArray) {
         extraLength = file.extraArray.length 
         data.array.set(file.extraArray, index + 46 + file.nameBuf.length)
       }
-      data.array.set(file.comment, index + 46 + file.nameBuf.length + extralength)
+      data.array.set(file.comment, index + 46 + file.nameBuf.length + extraLength)
       index += 46 + file.nameBuf.length + file.comment.length + extraLength
     }
     if (zip64) {
