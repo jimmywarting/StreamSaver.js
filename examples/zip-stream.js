@@ -153,7 +153,7 @@ function createWriter(underlyingSource) {
                     }
 
                     ctrl.enqueue(footer.array)
-                    offset += zipObject.compressedLength + 16
+                    offset += zipObject.compressedLength + footer.array.length
                     next()
                 },
                 fileLike
@@ -252,10 +252,10 @@ function createWriter(underlyingSource) {
             cdOffset = 0xffffffff;
         }
         data.view.setUint32(index, 0x504b0506)
-        data.view.setUint16(index + 8, filenames.length, true)
-        data.view.setUint16(index + 10, filenames.length, true)
+        data.view.setUint16(index + 8, totalEntries, true)
+        data.view.setUint16(index + 10, totalEntries, true)
         data.view.setUint32(index + 12, length, true)
-        data.view.setUint32(index + 16, offset, true)
+        data.view.setUint32(index + 16, cdOffset, true)
         ctrl.enqueue(data.array)
         ctrl.close()
     }
