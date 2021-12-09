@@ -6,6 +6,7 @@
   </head>
   <body>
     <button id="$start">Start</button>
+	<input type="file" multiple id="file-selector">
 
     <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
 
@@ -48,6 +49,8 @@
           name: 'streamsaver-zip-example/blob-example.txt',
           stream: () => blob.stream()
         }
+        const filesSelected = document.querySelector('#file-selector')
+
 
         // In a ideall world i would just have used a TransformStream
         // where you would get `{ readable writable } = new TransformStream()`
@@ -64,10 +67,17 @@
 		//       windows gets confused when file & folders starts with /
         const readableZipStream = new ZIP({
           start (ctrl) {
-            ctrl.enqueue(file1)
-            ctrl.enqueue(file2)
-            ctrl.enqueue(file3)
-            ctrl.enqueue({name: 'streamsaver-zip-example/empty folder', directory: true})
+          	if(filesSelected.files.length > 0){
+              for (let f of filesSelected.files) {
+			  	ctrl.enqueue(f)
+			  }
+			} else{
+              ctrl.enqueue(file1)
+              ctrl.enqueue(file2)
+              ctrl.enqueue(file3)
+			  ctrl.enqueue({name: 'streamsaver-zip-example/empty folder', directory: true})
+			}
+
             // ctrl.close()
           },
           async pull (ctrl) {
