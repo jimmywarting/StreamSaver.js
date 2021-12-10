@@ -16,6 +16,7 @@ class Crc32 {
         return ~this.crc
     }
 }
+
 Crc32.prototype.table = (() => {
     var i;
     var j;
@@ -56,7 +57,7 @@ const pump = zipObj => zipObj.reader.read().then(chunk => {
  * @return {Boolean}                  [description]
  */
 function createWriter(underlyingSource) {
-    const files = Object.create(null)
+    const files = {}
     const filenames = []
     const encoder = new TextEncoder()
     let offset = 0
@@ -94,12 +95,13 @@ function createWriter(underlyingSource) {
                 comment: encoder.encode(fileLike.comment || ''),
                 compressedLength: 0,
                 uncompressedLength: 0,
+                offset: offset,
                 extraArray: null,
+
                 writeHeader() {
                     var header = getDataHelper(26)
                     var data = getDataHelper(30 + nameBuf.length)
 
-                    zipObject.offset = offset
                     zipObject.header = header
                     if (zipObject.level !== 0 && !zipObject.directory) {
                         header.view.setUint16(4, 0x0800)
@@ -118,12 +120,15 @@ function createWriter(underlyingSource) {
                     offset += data.array.length
                     ctrl.enqueue(data.array)
                 },
+
                 writeFooter() {
                     if (zipObject.compressedLength && zipObject.compressedLength >= 0xffffffff) {
                         header.view.setUint16(0, 45)
                         zip64 = true
                     }
+
                     var footer = getDataHelper(zip64 ? 24 : 16)
+                    offset += zipObject.compressedLength || 0
                     footer.view.setUint32(0, 0x504b0708)
 
                     if (zipObject.crc) {
@@ -143,17 +148,19 @@ function createWriter(underlyingSource) {
                         zip64Extra.view.setBigUint64(12, BigInt(zipObject.compressedLength), true)
                         zip64Extra.view.setBigUint64(20, BigInt(files[name].offset), true)
                         files[name].extraArray = zip64Extra.array
-                    } else if (zipObject.crc) {
+                    } else {
                         zipObject.header.view.setUint32(14, zipObject.compressedLength, true)
                         zipObject.header.view.setUint32(18, zipObject.uncompressedLength, true)
-                        footer.view.setUint32(4, zipObject.crc.get(), true)
+                        if(zipObject.crc)
+                            footer.view.setUint32(4, zipObject.crc.get(), true)
+                        
                         footer.view.setUint32(8, zipObject.compressedLength, true)
                         footer.view.setUint32(12, zipObject.uncompressedLength, true)
 
                     }
 
                     ctrl.enqueue(footer.array)
-                    offset += zipObject.compressedLength + footer.array.length
+                    offset += footer.array.length
                     next()
                 },
                 fileLike
@@ -174,9 +181,9 @@ function createWriter(underlyingSource) {
     function closeZip() {
         var length = 0
         var index = 0
-        var indexFilename, file, cdOffset
+        var indexFilename, file, cdOffset, totalEntries = filenames.length
         var zip64 = false
-        for (indexFilename = 0; indexFilename < filenames.length; indexFilename++) {
+        for (indexFilename = 0; indexFilename < totalEntries; indexFilename++) {
             file = files[filenames[indexFilename]]
             length += 46 + file.nameBuf.length + file.comment.length
             if (file.extraArray) {
@@ -184,12 +191,12 @@ function createWriter(underlyingSource) {
                 zip64 = true
             }
         }
-        cdOffset = file.offset
-        if (cdOffset + length >= 0xffffffff || filenames.length >= 0xffff)
+        cdOffset = offset
+        if (cdOffset + length >= 0xffffffff || totalEntries >= 0xffff)
             zip64 = true
 
         const data = getDataHelper(length + 22 + (zip64 ? 56 + 20 : 0))
-        for (indexFilename = 0; indexFilename < filenames.length; indexFilename++) {
+        for (indexFilename = 0; indexFilename < totalEntries; indexFilename++) {
             file = files[filenames[indexFilename]]
             data.view.setUint32(index, 0x504b0102)
             data.view.setUint16(index + 4, 0x1400)
