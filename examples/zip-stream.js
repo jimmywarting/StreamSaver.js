@@ -85,7 +85,7 @@ function createWriter(underlyingSource) {
 			if (fileLike.directory && !name.endsWith('/')) name += '/'
 			if (files[name]) throw new Error('File already exists.')
 			overallSize += fileLike.size
-			zip64 = (overallSize >= 0xffffffff);
+			zip64 = true; //(overallSize >= 0xffffffff) ;
 
 			const nameBuf = encoder.encode(name)
 			filenames.push(name)
