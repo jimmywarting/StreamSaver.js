@@ -18,13 +18,10 @@ class Crc32 {
 }
 
 Crc32.prototype.table = (() => {
-	var i;
-	var j;
-	var t;
-	var table = []
-	for (i = 0; i < 256; i++) {
-		t = i
-		for (j = 0; j < 8; j++) {
+	const table = [];
+	for (let i = 0; i < 256; i++) {
+		let t = i
+		for (let j = 0; j < 8; j++) {
 			t = (t & 1)
 				? (t >>> 1) ^ 0xEDB88320
 				: t >>> 1
@@ -35,7 +32,7 @@ Crc32.prototype.table = (() => {
 })()
 
 const getDataHelper = byteLength => {
-	var uint8 = new Uint8Array(byteLength)
+	const uint8 = new Uint8Array(byteLength);
 	return {
 		array: uint8,
 		view: new DataView(uint8.buffer)
@@ -101,8 +98,8 @@ function createWriter(underlyingSource) {
 				uncompressedLength: 0,
 				extraArray: null,
 				writeHeader() {
-					var header = getDataHelper(26)
-					var data = getDataHelper(30 + nameBuf.length)
+					let header = getDataHelper(26);
+					let data = getDataHelper(30 + nameBuf.length);
 
 					zipObject.offset = offset
 					zipObject.header = header
@@ -128,7 +125,7 @@ function createWriter(underlyingSource) {
 					//   zipObject.header.view.setUint16(0, 45)
 					//   zip64 = true
 					// }
-					var footer = getDataHelper(zip64 ? 24 : 16)
+					let footer = getDataHelper(zip64 ? 24 : 16);
 					footer.view.setUint32(0, 0x504b0708)
 
 					if (zipObject.crc) {
@@ -176,9 +173,9 @@ function createWriter(underlyingSource) {
 	};
 
 	function closeZip() {
-		var length = 0
-		var index = 0
-		var indexFilename, file
+		let length = 0;
+		let index = 0;
+		let indexFilename, file;
 		// var zip64 = false
 		let cdOffset = offset
 		let totalEntries = filenames.length
@@ -268,7 +265,11 @@ function createWriter(underlyingSource) {
 
 	function processNextChunk() {
 		if (!activeZipObject) return
-		if (activeZipObject.directory) return activeZipObject.writeFooter(activeZipObject.writeHeader())
+		if (activeZipObject.directory) {
+			activeZipObject.writeHeader()
+			activeZipObject.writeFooter()
+			return
+		}
 		if (activeZipObject.reader) return pump(activeZipObject)
 		if (activeZipObject.fileLike.stream) {
 			activeZipObject.crc = new Crc32()
