@@ -123,7 +123,7 @@ function createWriter(underlyingSource) {
 
                 writeFooter() {
                     if (zipObject.compressedLength && zipObject.compressedLength >= 0xffffffff) {
-                        header.view.setUint16(0, 45)
+                        zipObject.header.view.setUint16(0, 45)
                         zip64 = true
                     }
 
@@ -138,8 +138,8 @@ function createWriter(underlyingSource) {
 
                     if (zip64) {
                         let zip64Extra = getDataHelper(28)
-                        header.view.setUint32(14, 0xffffffff, true)
-                        header.view.setUint32(18, 0xffffffff, true)
+                        zipObject.header.view.setUint32(14, 0xffffffff, true)
+                        zipObject.header.view.setUint32(18, 0xffffffff, true)
                         footer.view.setBigUint64(8, BigInt(zipObject.compressedLength), true)
                         footer.view.setBigInt64(16, BigInt(zipObject.uncompressedLength), true)
                         zip64Extra.view.setUint16(0, 0x0001, true)

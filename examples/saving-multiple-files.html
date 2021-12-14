@@ -72,7 +72,8 @@
             files.forEach(f => {ctrl.enqueue(f)})
             ctrl.enqueue({name: 'streamsaver-zip-example/empty folder', directory: true})
             // ctrl.close()
-          },
+          }
+            /*
           async pull (ctrl) {
 			// Gets executed everytime zip.js asks for more data
             const url = 'https://download.blender.org/durian/movies/Sintel.2010.4k.mkv'
@@ -84,7 +85,7 @@
 			  
 			// if (done adding all files)
             ctrl.close()
-          }
+          }*/
         })
 
         // more optimized
