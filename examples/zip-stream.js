@@ -64,6 +64,8 @@ function createWriter(underlyingSource) {
     let activeZipIndex = 0
     let ctrl
     let activeZipObject, closed
+    let zip64 = false
+    let filesSize = 0
 
     function next() {
         activeZipIndex++
@@ -81,7 +83,8 @@ function createWriter(underlyingSource) {
 
             if (fileLike.directory && !name.endsWith('/')) name += '/'
             if (files[name]) throw new Error('File already exists.')
-            let zip64 = (offset >= 0xffffffff) ? true : false
+            filesSize += fileLike.size
+            zip64 = (filesSize >= 0xffffffff)
 
             const nameBuf = encoder.encode(name)
             filenames.push(name)
