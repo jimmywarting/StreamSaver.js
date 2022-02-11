@@ -237,6 +237,13 @@
             // We never remove this iframes b/c it can interrupt saving
             makeIframe(evt.data.download)
           }
+        } else if (evt.data.abort) {
+          chunks = []
+          channel.port1.postMessage('abort') //send back so controller is aborted
+          channel.port1.onmessage = null
+          channel.port1.close()
+          channel.port2.close()
+          channel = null
         }
       }
 
