@@ -159,8 +159,9 @@ if (navigator.serviceWorker) {
   })
 }
 
-// FF can ping sw with fetch from a secure hidden iframe
-// shouldn't really be possible?
+// FF v102 just started to supports transferable streams, but still needs to ping sw.js
+// even tough the service worker dose not have to do any kind of work and listen to any
+// messages... #305
 keepAlive()
 
 </script>
