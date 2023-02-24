@@ -157,10 +157,10 @@ if (navigator.serviceWorker) {
     window.onmessage = onMessage
     messages.forEach(window.onmessage)
   })
-} else {
-  // FF can ping sw with fetch from a secure hidden iframe
-  // shouldn't really be possible?
-  keepAlive()
 }
+
+// FF can ping sw with fetch from a secure hidden iframe
+// shouldn't really be possible?
+keepAlive()
 
 </script>
