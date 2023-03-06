@@ -1,3 +1,5 @@
+/*! streamsaver. MIT License. Jimmy Wärting <https://jimmy.warting.se/opensource> */
+
 /* global chrome location ReadableStream define MessageChannel TransformStream */
 
 ;((name, definition) => {
@@ -9,22 +11,25 @@
 })('streamSaver', () => {
   'use strict'
 
+  const global = typeof window === 'object' ? window : this
+  if (!global.HTMLElement) console.warn('streamsaver is meant to run on browsers main thread')
+
   let mitmTransporter = null
   let supportsTransferable = false
   const test = fn => { try { fn() } catch (e) {} }
-  const ponyfill = window.WebStreamsPolyfill || {}
-  const isSecureContext = window.isSecureContext
+  const ponyfill = global.WebStreamsPolyfill || {}
+  const isSecureContext = global.isSecureContext
   // TODO: Must come up with a real detection test (#69)
-  let useBlobFallback = /constructor/i.test(window.HTMLElement) || !!window.safari || !!window.WebKitPoint
+  let useBlobFallback = /constructor/i.test(global.HTMLElement) || !!global.safari || !!global.WebKitPoint
   const downloadStrategy = isSecureContext || 'MozAppearance' in document.documentElement.style
     ? 'iframe'
     : 'navigate'
 
   const streamSaver = {
     createWriteStream,
-    WritableStream: window.WritableStream || ponyfill.WritableStream,
+    WritableStream: global.WritableStream || ponyfill.WritableStream,
     supported: true,
-    version: { full: '2.0.0', major: 2, minor: 0, dot: 0 },
+    version: { full: '2.0.5', major: 2, minor: 0, dot: 5 },
     mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
   }
 
@@ -61,7 +66,7 @@
     const options = 'width=200,height=100'
     const delegate = document.createDocumentFragment()
     const popup = {
-      frame: window.open(src, 'popup', options),
+      frame: global.open(src, 'popup', options),
       loaded: false,
       isIframe: false,
       isPopup: true,
@@ -75,12 +80,12 @@
     const onReady = evt => {
       if (evt.source === popup.frame) {
         popup.loaded = true
-        window.removeEventListener('message', onReady)
+        global.removeEventListener('message', onReady)
         popup.dispatchEvent(new Event('load'))
       }
     }
 
-    window.addEventListener('message', onReady)
+    global.addEventListener('message', onReady)
 
     return popup
   }
@@ -96,7 +101,7 @@
   }
 
   test(() => {
-    // Transfariable stream was first enabled in chrome v73 behind a flag
+    // Transferable stream was first enabled in chrome v73 behind a flag
     const { readable } = new TransformStream()
     const mc = new MessageChannel()
     mc.port1.postMessage(readable, [readable])
@@ -122,8 +127,8 @@
   /**
    * @param  {string} filename filename that should be used
    * @param  {object} options  [description]
-   * @param  {number} size     depricated
-   * @return {WritableStream}
+   * @param  {number} size     deprecated
+   * @return {WritableStream<Uint8Array>}
    */
   function createWriteStream (filename, options, size) {
     let opts = {
@@ -141,11 +146,11 @@
     // normalize arguments
     if (Number.isFinite(options)) {
       [ size, options ] = [ options, size ]
-      console.warn('[StreamSaver] Depricated pass an object as 2nd argument when creating a write stream')
+      console.warn('[StreamSaver] Deprecated pass an object as 2nd argument when creating a write stream')
       opts.size = size
       opts.writableStrategy = options
     } else if (options && options.highWaterMark) {
-      console.warn('[StreamSaver] Depricated pass an object as 2nd argument when creating a write stream')
+      console.warn('[StreamSaver] Deprecated pass an object as 2nd argument when creating a write stream')
       opts.size = size
       opts.writableStrategy = options
     } else {
@@ -155,7 +160,7 @@
       loadTransporter()
 
       channel = new MessageChannel()
-      
+
       // Make filename RFC5987 compatible
       filename = encodeURIComponent(filename.replace(/\//g, ':'))
         .replace(/['()]/g, escape)
@@ -180,6 +185,9 @@
         const transformer = downloadStrategy === 'iframe' ? undefined : {
           // This transformer & flush method is only used by insecure context.
           transform (chunk, controller) {
+            if (!(chunk instanceof Uint8Array)) {
+              throw new TypeError('Can only write Uint8Arrays')
+            }
             bytesWritten += chunk.length
             controller.enqueue(chunk)
 
@@ -219,6 +227,7 @@
           } else {
             if (mitmTransporter.isPopup) {
               mitmTransporter.remove()
+              mitmTransporter = null
               // Special case for firefox, they can keep sw alive with fetch
               if (downloadStrategy === 'iframe') {
                 makeIframe(streamSaver.mitm)
@@ -228,6 +237,13 @@
             // We never remove this iframes b/c it can interrupt saving
             makeIframe(evt.data.download)
           }
+        } else if (evt.data.abort) {
+          chunks = []
+          channel.port1.postMessage('abort') //send back so controller is aborted
+          channel.port1.onmessage = null
+          channel.port1.close()
+          channel.port2.close()
+          channel = null
         }
       }
 
@@ -244,11 +260,14 @@
 
     return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
       write (chunk) {
+        if (!(chunk instanceof Uint8Array)) {
+          throw new TypeError('Can only write Uint8Arrays')
+        }
         if (useBlobFallback) {
           // Safari... The new IE6
           // https://github.com/jimmywarting/StreamSaver.js/issues/69
           //
-          // even doe it has everything it fails to download anything
+          // even though it has everything it fails to download anything
           // that comes from the service worker..!
           chunks.push(chunk)
           return
@@ -263,7 +282,7 @@
 
         // TODO: Kind of important that service worker respond back when
         // it has been written. Otherwise we can't handle backpressure
-        // EDIT: Transfarable streams solvs this...
+        // EDIT: Transferable streams solves this...
         channel.port1.postMessage(chunk)
         bytesWritten += chunk.length
 
