@@ -1,6 +1,9 @@
 StreamSaver.js (legacy-ish)
 ===========================
 
+**StreamSaver.js is the solution to saving streams in the web browser.
+It is perfect for web apps where there's a need to save large amounts of data on devices with e.g. limited RAM.**
+
 ... Don't worry it's not deprecated. It's still maintained and i still recommend 
 using this when needed. Just want to let you know that there is this new native way
 to save files to the HD: https://github.com/whatwg/fs which is more
@@ -20,10 +23,6 @@ storage or in memory you could now actually create a writable stream directly to
 the file system (I'm not talking about chromes sandboxed file system or any other
 web storage). This is accomplish by emulating how a server would instruct the
 browser to save a file using some response header + service worker
-
-StreamSaver.js is the solution to saving streams on the client-side.
-It is perfect for webapps that need to save really large amounts of data created
-on the client-side, where the RAM is really limited, like on mobile devices.
 
 **If the file you are trying to save comes from the cloud/server** use the server instead
 of emulating what the browser does to save files on the disk using StreamSaver.
