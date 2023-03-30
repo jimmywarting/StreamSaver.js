@@ -128,7 +128,7 @@ There are a few examples in the [examples] directory
 - [slowly write 1 byte / sec](https://jimmywarting.github.io/StreamSaver.js/examples/write-slowly.html)
 
 In the wild
-- [Adding ID3 tag to mp3 file on the fly](https://egoroof.ru/browser-id3-writer/stream) - by [Artyom Egorov](https://github.com/egoroof)
+- [Adding ID3 tag to mp3 file on the fly](https://egoroof.github.io/browser-id3-writer/stream.html) - by [Artyom Egorov](https://github.com/egoroof)
 
 
 How does it work?
