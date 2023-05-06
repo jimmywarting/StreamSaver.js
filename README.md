@@ -11,6 +11,9 @@ so you can have it in all Browsers, Deno, and NodeJS with different storages
 
 [![npm version][npm-image]][npm-url]
 
+**StreamSaver.js is the solution to saving streams in the web browser.
+It is perfect for web apps where there's a need to save large amounts of data on devices with e.g. limited RAM.**
+
 First I want to thank [Eli Grey][1] for a fantastic work implementing the
 [FileSaver.js][2] to save files & blobs so easily!
 But there is one obstacle - The RAM it can hold and the max blob size limitation
@@ -21,9 +24,13 @@ the file system (I'm not talking about chromes sandboxed file system or any othe
 web storage). This is accomplish by emulating how a server would instruct the
 browser to save a file using some response header + service worker
 
-StreamSaver.js is the solution to saving streams on the client-side.
-It is perfect for webapps that need to save really large amounts of data created
-on the client-side, where the RAM is really limited, like on mobile devices.
+**If the file you are trying to save comes from the cloud/server** use the server instead
+of emulating what the browser does to save files on the disk using StreamSaver.
+Add those extra Response headers and **don't use AJAX** to get it. FileSaver has
+a good [wiki](https://github.com/eligrey/FileSaver.js/wiki/Saving-a-remote-file)
+about using headers. If you can't change the headers then you may use StreamSaver
+as a last resort. FileSaver, streamsaver and others alike are mostly for client
+generated content inside the browser.
 
 **If the file you are trying to save comes from the cloud/server** use the server instead
 of emulating what the browser does to save files on the disk using StreamSaver.
@@ -129,7 +136,7 @@ There are a few examples in the [examples] directory
 - [slowly write 1 byte / sec](https://jimmywarting.github.io/StreamSaver.js/examples/write-slowly.html)
 
 In the wild
-- [Adding ID3 tag to mp3 file on the fly](https://egoroof.ru/browser-id3-writer/stream) - by [Artyom Egorov](https://github.com/egoroof)
+- [Adding ID3 tag to mp3 file on the fly](https://egoroof.github.io/browser-id3-writer/stream.html) - by [Artyom Egorov](https://github.com/egoroof)
 
 
 How does it work?
