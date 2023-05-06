@@ -1,9 +1,6 @@
 StreamSaver.js (legacy-ish)
 ===========================
 
-**StreamSaver.js is the solution to saving streams in the web browser.
-It is perfect for web apps where there's a need to save large amounts of data on devices with e.g. limited RAM.**
-
 ... Don't worry it's not deprecated. It's still maintained and i still recommend 
 using this when needed. Just want to let you know that there is this new native way
 to save files to the HD: https://github.com/whatwg/fs which is more
@@ -14,6 +11,9 @@ so you can have it in all Browsers, Deno, and NodeJS with different storages
 
 [![npm version][npm-image]][npm-url]
 
+**StreamSaver.js is the solution to saving streams in the web browser.
+It is perfect for web apps where there's a need to save large amounts of data on devices with e.g. limited RAM.**
+
 First I want to thank [Eli Grey][1] for a fantastic work implementing the
 [FileSaver.js][2] to save files & blobs so easily!
 But there is one obstacle - The RAM it can hold and the max blob size limitation
@@ -23,6 +23,14 @@ storage or in memory you could now actually create a writable stream directly to
 the file system (I'm not talking about chromes sandboxed file system or any other
 web storage). This is accomplish by emulating how a server would instruct the
 browser to save a file using some response header + service worker
+
+**If the file you are trying to save comes from the cloud/server** use the server instead
+of emulating what the browser does to save files on the disk using StreamSaver.
+Add those extra Response headers and **don't use AJAX** to get it. FileSaver has
+a good [wiki](https://github.com/eligrey/FileSaver.js/wiki/Saving-a-remote-file)
+about using headers. If you can't change the headers then you may use StreamSaver
+as a last resort. FileSaver, streamsaver and others alike are mostly for client
+generated content inside the browser.
 
 **If the file you are trying to save comes from the cloud/server** use the server instead
 of emulating what the browser does to save files on the disk using StreamSaver.
