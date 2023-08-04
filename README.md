@@ -141,7 +141,7 @@ In the wild
 
 How does it work?
 =====================
-There is no magical `saveAs()` function that saves a stream, file or blob. (at least not if/when native-filesystem api becomes avalible)
+There is no magical `saveAs()` function that saves a stream, file or blob. (at least not if/when native-filesystem api becomes available)
 The way we mostly save Blobs/Files today is with the help of [Object URLs](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL) and  [`a[download]`][5] attribute
 [FileSaver.js][2] takes advantage of this and create a convenient `saveAs(blob, filename)`. fantastic! But you can't create a objectUrl from a stream and attach
 it to a link...
