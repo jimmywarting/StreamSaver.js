@@ -32,14 +32,6 @@ about using headers. If you can't change the headers then you may use StreamSave
 as a last resort. FileSaver, streamsaver and others alike are mostly for client
 generated content inside the browser.
 
-**If the file you are trying to save comes from the cloud/server** use the server instead
-of emulating what the browser does to save files on the disk using StreamSaver.
-Add those extra Response headers and **don't use AJAX** to get it. FileSaver has
-a good [wiki](https://github.com/eligrey/FileSaver.js/wiki/Saving-a-remote-file)
-about using headers. If you can't change the headers then you may use StreamSaver
-as a last resort. FileSaver, streamsaver and others alike are mostly for client
-generated content inside the browser.
-
 Getting started
 ===============
 StreamSaver in it's simplest form
