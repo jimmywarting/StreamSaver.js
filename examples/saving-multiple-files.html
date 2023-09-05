@@ -19,10 +19,11 @@
     <script src="zip-stream.js"></script>
     <script>
       $start.onclick = () => {
+        files = []
         const fileStream = streamSaver.createWriteStream('archive.zip')
 
         const file1 = new File(['file1 content'], 'streamsaver-zip-example/file1.txt')
-
+        files.push(file1)
         // File Like object works too
         const file2 = {
           name: 'streamsaver-zip-example/file2.txt',
@@ -42,13 +43,17 @@
             })
           }
         }
+        files.push(file2)
 
-        const blob = new Blob(['support blobs too'])
+        const blob = new Blob(['x'.repeat(1024)])
 
         const file3 = {
           name: 'streamsaver-zip-example/blob-example.txt',
           stream: () => blob.stream()
         }
+
+        files.push(file3)
+
 
         // In a ideall world i would just have used a TransformStream
         // where you would get `{ readable writable } = new TransformStream()`
@@ -65,24 +70,23 @@
 		//       windows gets confused when file & folders starts with /
         const readableZipStream = new ZIP({
           start (ctrl) {
-            ctrl.enqueue(file1)
-            ctrl.enqueue(file2)
-            ctrl.enqueue(file3)
+            files.forEach(f => {ctrl.enqueue(f)})
             ctrl.enqueue({name: 'streamsaver-zip-example/empty folder', directory: true})
             // ctrl.close()
-          },
+          }
+            /*
           async pull (ctrl) {
 			// Gets executed everytime zip.js asks for more data
-            const url = 'https://d8d913s460fub.cloudfront.net/videoserver/cat-test-video-320x240.mp4'
+            const url = 'https://download.blender.org/durian/movies/Sintel.2010.4k.mkv'
             const res = await fetch(url)
             const stream = () => res.body
-            const name = 'streamsaver-zip-example/cat.mp4'
+            const name = 'streamsaver-zip-example/sintel.mkv'
 
             ctrl.enqueue({ name, stream })
 
 			// if (done adding all files)
             ctrl.close()
-          }
+          }*/
         })
 
         // more optimized
