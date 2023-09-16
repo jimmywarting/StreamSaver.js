@@ -47,6 +47,7 @@
     iframe.loaded = false
     iframe.name = 'iframe'
     iframe.isIframe = true
+    iframe.credentialless = true
     iframe.postMessage = (...args) => iframe.contentWindow.postMessage(...args)
     iframe.addEventListener('load', () => {
       iframe.loaded = true
