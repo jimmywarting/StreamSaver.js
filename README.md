@@ -39,7 +39,7 @@ StreamSaver in it's simplest form
 <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js"></script>
 <script>
-  import streamSaver from 'streamsaver'
+  import streamsaver from 'streamsaver/StreamSaver.js'
   const streamSaver = require('streamsaver')
   const streamSaver = window.streamSaver
 </script>
