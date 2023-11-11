@@ -50,10 +50,6 @@ StreamSaver in it's simplest form
 
   const uInt8 = new TextEncoder().encode('StreamSaver is awesome')
 
-</script>
-<script>
-  const uInt8 = new TextEncoder().encode('StreamSaver is awesome')
-
   // streamSaver.createWriteStream() returns a writable byte stream
   // The WritableStream only accepts Uint8Array chunks
   // (no other typed arrays, arrayBuffers or strings are allowed)
