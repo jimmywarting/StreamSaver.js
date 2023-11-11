@@ -21,10 +21,9 @@
     <button id="$close">Close</button>
 
     <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/jimmywarting/browser-su@master/build/permissions.js"></script>
-    <script type="module" src="../StreamSaver.js"></script>
     <script type="module">
+      import streamSaver from "../StreamSaver.js"
       $vid.disabled = $aud.disabled = $start.disabled = !window.isSecureContext
       $start.onclick = async () => {
         const permission = { name: 'userMedia', video: $vid.checked, audio: $aud.checked }

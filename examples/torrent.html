@@ -14,9 +14,8 @@
     <button id="$start">Start</button>
 
     <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
-    <script type="module" src="../StreamSaver.js"></script>
     <script type="module">
+      import streamSaver from "../StreamSaver.js"
 
       function size (bytes, precision) {
         if (isNaN(parseFloat(bytes)) || !isFinite(bytes)) return '-';

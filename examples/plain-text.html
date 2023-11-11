@@ -7,7 +7,6 @@
   </head>
   <body>
     <script src="https://cdn.jsdelivr.net/webtorrent/latest/webtorrent.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
 
     <p>1) Set a filename</p>
     <input type="text" id="$filename" value="sample.txt">
@@ -31,7 +30,7 @@
 
     <script type="module">
       import streamSaver from "../StreamSaver.js"
-      console.log("StreamSaver ", streamSaver);
+
       var Lorem = `Lorem ipsum dolor sit amet, consectetur adipiscing elit.
       Pellentesque gravida condimentum metus et porttitor. Curabitur
       pharetra vestibulum egestas. Pellentesque quis tortor id ligula
