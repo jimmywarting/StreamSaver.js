@@ -30,7 +30,7 @@
     WritableStream: global.WritableStream || ponyfill.WritableStream,
     supported: true,
     version: { full: '2.0.5', major: 2, minor: 0, dot: 5 },
-    mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
+    mitm: 'https://gist.githubusercontent.com/avegancafe/330a1e25fcdfd5f391eec66821586d63/raw/926f04740953d79b84ad1a0df36719eb9aa44c21/streamsaver.html?version=2.0.0'
   }
 
   /**
