@@ -116,11 +116,23 @@
     })
   })
 
-  function loadTransporter () {
+  function loadIframeTransporter() {
+    if (!mitmTransporter || !mitmTransporter.contentWindow) {
+      mitmTransporter = makeIframe(streamSaver.mitm)
+    }
+  }
+
+  function loadPopupTransporter() {
     if (!mitmTransporter) {
-      mitmTransporter = isSecureContext
-        ? makeIframe(streamSaver.mitm)
-        : makePopup(streamSaver.mitm)
+      mitmTransporter = makePopup(streamSaver.mitm)
+    }
+  }
+
+  function loadTransporter () {
+    if (isSecureContext) {
+      loadIframeTransporter()
+    } else {
+      loadPopupTransporter()
     }
   }
 
