@@ -81,7 +81,7 @@ Some browser have ReadableStream but not WritableStream. [web-streams-polyfill](
 in a popup to install the service worker from another secure context. Popups are often blocked
 but if you can't it's best that you **initiate the `createWriteStream`
 on user interaction**. Even if you don't have any data ready - this is so that you can get around the popup blockers. (In secure context this don't matter)
-Another benefit of using https is that the mitm-iframe can ping the service worker to prevent it from going idle. (worker goes idle after 30 sec in firefox, 5 minutes in blink) but also this won't mater if the browser supports [transferable streams](https://github.com/whatwg/streams/blob/master/transferable-streams-explainer.md) throught postMessage since service worker don't have to handle any logic. (the stream that you transfer to the service worker will be the stream we respond with)
+Another benefit of using https is that the mitm-iframe can ping the service worker to prevent it from going idle. (worker goes idle after 30 sec in firefox, 5 minutes in blink) but also this won't mater if the browser supports [transferable streams](https://github.com/whatwg/streams/blob/main/explainers/transferable-streams.md) throught postMessage since service worker don't have to handle any logic. (the stream that you transfer to the service worker will be the stream we respond with)
 
 **Handle unload event** when user leaves the page. The download gets broken when you leave the page.
 Because it looks like a regular native download process some might think that it's okey to leave the page beforehand since it's is downloading in the background directly from some a server, but it isn't.
