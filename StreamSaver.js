@@ -303,7 +303,10 @@
         }
       },
       abort () {
-        chunks = []
+        if (useBlobFallback) {
+        	chunks = []
+        	return
+        }
         channel.port1.postMessage('abort')
         channel.port1.onmessage = null
         channel.port1.close()
