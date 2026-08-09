@@ -2,15 +2,6 @@
 
 /* global chrome location ReadableStream define MessageChannel TransformStream */
 
-;((name, definition) => {
-  typeof module !== 'undefined'
-    ? module.exports = definition()
-    : typeof define === 'function' && typeof define.amd === 'object'
-      ? define(definition)
-      : this[name] = definition()
-})('streamSaver', () => {
-  'use strict'
-
   const global = typeof window === 'object' ? window : this
   if (!global.HTMLElement) console.warn('streamsaver is meant to run on browsers main thread')
 
@@ -313,5 +304,5 @@
     }, opts.writableStrategy)
   }
 
-  return streamSaver
-})
+ export default streamSaver
+
