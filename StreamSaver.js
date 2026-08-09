@@ -294,10 +294,12 @@
       close () {
         if (useBlobFallback) {
           const blob = new Blob(chunks, { type: 'application/octet-stream; charset=utf-8' })
+		  chunks = []
           const link = document.createElement('a')
           link.href = URL.createObjectURL(blob)
           link.download = filename
           link.click()
+		  URL.revokeObjectURL(link.href)
         } else {
           channel.port1.postMessage('end')
         }
