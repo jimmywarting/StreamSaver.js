@@ -260,7 +260,7 @@
 
     return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
       write (chunk) {
-        if (!(chunk instanceof Uint8Array)) {
+        if (Object.prototype.toString.call(chunk) !== '[object Uint8Array]') {
           throw new TypeError('Can only write Uint8Arrays')
         }
         if (useBlobFallback) {
