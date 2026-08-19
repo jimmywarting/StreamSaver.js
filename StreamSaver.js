@@ -93,7 +93,7 @@
   try {
     // We can't look for service worker since it may still work on http
     new Response(new ReadableStream())
-    if (isSecureContext && !('serviceWorker' in navigator)) {
+    if (!('serviceWorker' in navigator)) {
       useBlobFallback = true
     }
   } catch (err) {
