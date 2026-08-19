@@ -1,4 +1,4 @@
-StreamSaver.js (legacy-ish)
+StreamSaver.js (legacy-ish) - with ZIP64 support
 ===========================
 
 ... Don't worry it's not deprecated. It's still maintained and i still recommend 
