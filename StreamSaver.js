@@ -30,6 +30,13 @@
     WritableStream: global.WritableStream || ponyfill.WritableStream,
     supported: true,
     version: { full: '2.0.5', major: 2, minor: 0, dot: 5 },
+    /**
+     * Whether to buffer the whole file in memory and save it with a blob: URL
+     * instead of streaming it through the service worker. Decided from the
+     * WebKit quirk test at load time; override it before calling createWriteStream.
+     */
+    get useBlobFallback () { return useBlobFallback },
+    set useBlobFallback (value) { useBlobFallback = !!value },
     mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
   }
 

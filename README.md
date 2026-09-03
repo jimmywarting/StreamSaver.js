@@ -114,6 +114,23 @@ streamSaver.TransformStream = streamSaver.TransformStream
 streamSaver.mitm = 'https://example.com/custom_mitm.html'
 ```
 
+### `streamSaver.useBlobFallback`
+
+Read or override whether StreamSaver buffers the whole file in memory and saves it with a `blob:` URL
+instead of streaming it through the service worker. Defaults to `true` on WebKit browsers (see [#69]).
+Set it before calling `createWriteStream`:
+
+```js
+// Safari 15.4+ can download service worker generated responses (#287),
+// so an app that only supports recent Safari can opt back in to streaming.
+if (safariVersion >= 16) streamSaver.useBlobFallback = false
+```
+
+Note that the blob fallback holds the entire file in the page's memory (and copies it once more when
+the stream closes), so very large files can crash the tab, especially on iOS.
+
+[#69]: https://github.com/jimmywarting/StreamSaver.js/issues/69
+
 Examples
 ========
 
