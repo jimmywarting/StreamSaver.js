@@ -134,6 +134,7 @@
     let opts = {
       size: null,
       pathname: null,
+      backpressure: false,
       writableStrategy: undefined,
       readableStrategy: undefined
     }
@@ -142,6 +143,12 @@
     let downloadUrl = null
     let channel = null
     let ts = null
+    // Credit based backpressure for the postMessage path (no transferable streams).
+    // Only active once the service worker confirms support in its { download }
+    // reply, so an old sw.js keeps today's fire-and-forget behaviour.
+    let creditsEnabled = false
+    let credits = 0
+    let creditWaiters = []
 
     // normalize arguments
     if (Number.isFinite(options)) {
@@ -168,6 +175,7 @@
 
       const response = {
         transferringReadable: supportsTransferable,
+        backpressure: !!opts.backpressure && !supportsTransferable,
         pathname: opts.pathname || Math.random().toString().slice(-6) + '/' + filename,
         headers: {
           'Content-Type': 'application/octet-stream; charset=utf-8',
@@ -215,6 +223,7 @@
       channel.port1.onmessage = evt => {
         // Service worker sent us a link that we should open.
         if (evt.data.download) {
+          creditsEnabled = evt.data.backpressure === true
           // Special treatment for popup...
           if (downloadStrategy === 'navigate') {
             mitmTransporter.remove()
@@ -237,8 +246,16 @@
             // We never remove this iframes b/c it can interrupt saving
             makeIframe(evt.data.download)
           }
+        } else if (typeof evt.data.pull === 'number') {
+          // Service worker has room for more chunks
+          credits += evt.data.pull
+          while (credits > 0 && creditWaiters.length) {
+            credits--
+            creditWaiters.shift()()
+          }
         } else if (evt.data.abort) {
           chunks = []
+          creditWaiters.splice(0).forEach(resolve => resolve())
           channel.port1.postMessage('abort') //send back so controller is aborted
           channel.port1.onmessage = null
           channel.port1.close()
@@ -259,7 +276,7 @@
     let chunks = []
 
     return (!useBlobFallback && ts && ts.writable) || new streamSaver.WritableStream({
-      write (chunk) {
+      async write (chunk) {
         if (!(chunk instanceof Uint8Array)) {
           throw new TypeError('Can only write Uint8Arrays')
         }
@@ -280,9 +297,17 @@
         // only after previous writes have succeeded, and never after
         // close or abort is called.
 
-        // TODO: Kind of important that service worker respond back when
-        // it has been written. Otherwise we can't handle backpressure
-        // EDIT: Transferable streams solves this...
+        // Without transferable streams the service worker can not tell us when
+        // a chunk has been consumed, so with { backpressure: true } we wait for
+        // a credit from it before posting the next chunk.
+        if (creditsEnabled) {
+          if (credits > 0) {
+            credits--
+          } else {
+            await new Promise(resolve => creditWaiters.push(resolve))
+          }
+          if (!channel) return // aborted while waiting
+        }
         channel.port1.postMessage(chunk)
         bytesWritten += chunk.length
 
@@ -304,6 +329,7 @@
       },
       abort () {
         chunks = []
+        creditWaiters.splice(0).forEach(resolve => resolve())
         channel.port1.postMessage('abort')
         channel.port1.onmessage = null
         channel.port1.close()

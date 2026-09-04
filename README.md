@@ -114,6 +114,20 @@ streamSaver.TransformStream = streamSaver.TransformStream
 streamSaver.mitm = 'https://example.com/custom_mitm.html'
 ```
 
+### Backpressure without transferable streams
+
+When the browser can not transfer a ReadableStream to the service worker, chunks are sent with
+`postMessage` and nothing tells the page when the browser has consumed them, so a producer that is
+faster than the disk piles chunks up inside the service worker. Pass `backpressure: true` to make
+`write()` wait for the service worker to ask for more (at most a few chunks in flight):
+
+```js
+const fileStream = streamSaver.createWriteStream('filename.txt', { backpressure: true })
+```
+
+This needs the matching `sw.js`. With an older service worker (or when transferable streams are
+available, which already have native backpressure) the option has no effect.
+
 Examples
 ========
 
