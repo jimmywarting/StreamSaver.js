@@ -1,4 +1,4 @@
-/* global self ReadableStream Response */
+/* global self ReadableStream Response CountQueuingStrategy */
 
 self.addEventListener('install', () => {
   self.skipWaiting()
@@ -23,6 +23,7 @@ self.onmessage = event => {
   const downloadUrl = data.url || self.registration.scope + Math.random() + '/' + (typeof data === 'string' ? data : data.filename)
   const port = event.ports[0]
   const metadata = new Array(3) // [stream, data, port]
+  const backpressure = data.backpressure === true
 
   metadata[1] = data
   metadata[2] = port
@@ -38,20 +39,29 @@ self.onmessage = event => {
       metadata[0] = evt.data.readableStream
     }
   } else {
-    metadata[0] = createStream(port)
+    metadata[0] = createStream(port, backpressure)
   }
 
   map.set(downloadUrl, metadata)
-  port.postMessage({ download: downloadUrl })
+  port.postMessage({ download: downloadUrl, backpressure })
 }
 
-function createStream (port) {
+// How many chunks the page may have in flight before the browser has read them
+const BACKPRESSURE_HIGH_WATER_MARK = 4
+
+function createStream (port, backpressure) {
+  let controller
+  let outstanding = 0 // credits granted to the page but not consumed yet
+  let resolvePull = null
+
   // ReadableStream is only supported by chrome 52
   return new ReadableStream({
-    start (controller) {
+    start (c) {
+      controller = c
       // When we receive data on the messageChannel, we write
       port.onmessage = ({ data }) => {
         if (data === 'end') {
+          if (resolvePull) resolvePull()
           return controller.close()
         }
 
@@ -61,13 +71,31 @@ function createStream (port) {
         }
 
         controller.enqueue(data)
+        if (backpressure) {
+          outstanding--
+          if (resolvePull) {
+            resolvePull()
+            resolvePull = null
+          }
+        }
       }
+    },
+    pull () {
+      if (!backpressure) return
+      // Hand out credits up to desiredSize, then wait for the next chunk so the
+      // stream calls pull() again while it still has room.
+      const n = controller.desiredSize - outstanding
+      if (n > 0) {
+        outstanding += n
+        port.postMessage({ pull: n })
+      }
+      return new Promise(resolve => { resolvePull = resolve })
     },
     cancel (reason) {
       console.log('user aborted', reason)
       port.postMessage({ abort: true })
     }
-  })
+  }, backpressure ? new CountQueuingStrategy({ highWaterMark: BACKPRESSURE_HIGH_WATER_MARK }) : undefined)
 }
 
 self.onfetch = event => {
