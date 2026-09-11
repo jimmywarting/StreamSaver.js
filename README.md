@@ -1,7 +1,7 @@
 StreamSaver.js (legacy-ish)
 ===========================
 
-... Don't worry it's not deprecated. It's still maintained and i still recommend 
+... Don't worry it's not deprecated. It's still maintained and i still recommend
 using this when needed. Just want to let you know that there is this new native way
 to save files to the HD: https://github.com/whatwg/fs which is more
 or less going to make FileSaver, StreamSaver and similar packages a bit obsolete
@@ -34,17 +34,19 @@ generated content inside the browser.
 
 Getting started
 ===============
+
 StreamSaver in it's simplest form
+
 ```html
 <script src="https://cdn.jsdelivr.net/npm/web-streams-polyfill@2.0.2/dist/ponyfill.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/streamsaver@2.0.3/StreamSaver.min.js"></script>
 <script>
-  import streamSaver from 'streamsaver'
-  const streamSaver = require('streamsaver')
-  const streamSaver = window.streamSaver
+  import streamSaver from 'streamsaver';
+  const streamSaver = require('streamsaver');
+  const streamSaver = window.streamSaver;
 </script>
 <script>
-  const uInt8 = new TextEncoder().encode('StreamSaver is awesome')
+  const uInt8 = new TextEncoder().encode('StreamSaver is awesome');
 
   // streamSaver.createWriteStream() returns a writable byte stream
   // The WritableStream only accepts Uint8Array chunks
@@ -52,13 +54,13 @@ StreamSaver in it's simplest form
   const fileStream = streamSaver.createWriteStream('filename.txt', {
     size: uInt8.byteLength, // (optional filesize) Will show progress
     writableStrategy: undefined, // (optional)
-    readableStrategy: undefined  // (optional)
-  })
+    readableStrategy: undefined, // (optional)
+  });
 
   if (manual) {
-    const writer = fileStream.getWriter()
-    writer.write(uInt8)
-    writer.close()
+    const writer = fileStream.getWriter();
+    writer.write(uInt8);
+    writer.close();
   } else {
     // using Response can be a great tool to convert
     // mostly anything (blob, string, buffers) into a byte stream
@@ -68,7 +70,7 @@ StreamSaver in it's simplest form
     // between and convert everything to Uint8Arrays
     new Response('StreamSaver is awesome').body
       .pipeTo(fileStream)
-      .then(success, error)
+      .then(success, error);
   }
 </script>
 ```
@@ -89,18 +91,21 @@ Because it looks like a regular native download process some might think that it
 ```js
 // abort so it dose not look stuck
 window.onunload = () => {
-  writableStream.abort()
+  writableStream.abort();
   // also possible to call abort on the writer you got from `getWriter()`
-  writer.abort()
-}
+  writer.abort();
+};
 
-window.onbeforeunload = evt => {
+window.onbeforeunload = (evt) => {
   if (!done) {
     evt.returnValue = `Are you sure you want to leave?`;
   }
-}
+};
 ```
+
 Note that when using insecure context StreamSaver will navigate to the download url instead of using an hidden iframe to initiate the download, this will trigger the `onbefureunload` event when the download starts, but it will not call the `onunload` event... In secure context you can add this handler immediately. Otherwise this has to be added sometime later.
+
+**Pass `size` when the download runs on iOS.** iOS finalizes a service worker download the first time its progress reads complete, and a download that declares no length is scored complete after the first few megabytes: the saved file is a snapshot of the start of the stream, the rest is written nowhere, and Safari reports success. Declaring an upper bound keeps the progress short of complete until the real end, where WebKit clamps the total down to the bytes written — so an over-estimate only costs a progress bar that ends early, while an under-estimate truncates the file. See [#373](https://github.com/jimmywarting/StreamSaver.js/issues/373).
 
 # Configuration
 
@@ -108,10 +113,10 @@ There a some few settings you can apply to StreamSaver to configure what it shou
 
 ```js
 // StreamSaver can detect and use the Ponyfill that is loaded from the cdn.
-streamSaver.WritableStream = streamSaver.WritableStream
-streamSaver.TransformStream = streamSaver.TransformStream
+streamSaver.WritableStream = streamSaver.WritableStream;
+streamSaver.TransformStream = streamSaver.TransformStream;
 // if you decide to host mitm + sw yourself
-streamSaver.mitm = 'https://example.com/custom_mitm.html'
+streamSaver.mitm = 'https://example.com/custom_mitm.html';
 ```
 
 Examples
@@ -128,42 +133,45 @@ There are a few examples in the [examples] directory
 - [slowly write 1 byte / sec](https://jimmywarting.github.io/StreamSaver.js/examples/write-slowly.html)
 
 In the wild
-- [Adding ID3 tag to mp3 file on the fly](https://egoroof.github.io/browser-id3-writer/stream.html) - by [Artyom Egorov](https://github.com/egoroof)
 
+- [Adding ID3 tag to mp3 file on the fly](https://egoroof.github.io/browser-id3-writer/stream.html) - by [Artyom Egorov](https://github.com/egoroof)
 
 How does it work?
 =====================
+
 There is no magical `saveAs()` function that saves a stream, file or blob. (at least not if/when native-filesystem api becomes available)
-The way we mostly save Blobs/Files today is with the help of [Object URLs](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL) and  [`a[download]`][5] attribute
+The way we mostly save Blobs/Files today is with the help of [Object URLs](https://developer.mozilla.org/en-US/docs/Web/API/URL/createObjectURL) and [`a[download]`][5] attribute
 [FileSaver.js][2] takes advantage of this and create a convenient `saveAs(blob, filename)`. fantastic! But you can't create a objectUrl from a stream and attach
 it to a link...
+
 ```javascript
-link = document.createElement('a')
-link.href = URL.createObjectURL(stream) // DOES NOT WORK
-link.download = 'filename'
-link.click() // Save
+link = document.createElement('a');
+link.href = URL.createObjectURL(stream); // DOES NOT WORK
+link.download = 'filename';
+link.click(); // Save
 ```
+
 So the one and only other solution is to do what the server does: Send a stream
 with `Content-Disposition` header to tell the browser to save the file.
 But we don't have a server or the content isn't on a server! So the solution is to create a service worker
 that can intercept request and use [respondWith()][4] and act as a server.<br>
 But a service workers are only allowed in secure contexts and it requires some effort to put up. Most of the time you are working in the main thread and the service worker are only alive for < 5 minutes before it goes idle.<br>
 
- 1. So StreamSaver creates a own man in the middle that installs the service worker in a secure context hosted on github static pages. either from a iframe (in secure context) or a new popup if your page is insecure.
- 2. Transfer the stream (or DataChannel) over to the service worker using postMessage.
- 3. And then the worker creates a download link that we then open.
+1.  So StreamSaver creates a own man in the middle that installs the service worker in a secure context hosted on github static pages. either from a iframe (in secure context) or a new popup if your page is insecure.
+2.  Transfer the stream (or DataChannel) over to the service worker using postMessage.
+3.  And then the worker creates a download link that we then open.
 
 if a "transferable" readable stream was not passed to the service worker then the mitm will also try to keep the service worker alive by pinging it every x second to prevent it from going idle.
 
 To test this locally, spin up a local server<br>
 (we don't use any pre compiler or such)
+
 ```bash
 # A simple php or python server is enough
 php -S localhost:3001
 python -m SimpleHTTPServer 3001
 # then open localhost:3001/example.html
 ```
-
 
 [1]: https://github.com/eligrey
 [2]: https://github.com/eligrey/FileSaver.js

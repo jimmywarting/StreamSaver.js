@@ -19,8 +19,15 @@
   const test = fn => { try { fn() } catch (e) {} }
   const ponyfill = global.WebStreamsPolyfill || {}
   const isSecureContext = global.isSecureContext
-  // TODO: Must come up with a real detection test (#69)
-  let useBlobFallback = /constructor/i.test(global.HTMLElement) || !!global.safari || !!global.WebKitPoint
+  // WebKit quirk test (#69). Until Safari 15.4 WebKit re-fetched the URL from the
+  // network and dropped the service worker body when it decided to download
+  // (webkit.org/b/182848), so every WebKit browser went to the blob fallback.
+  // Since 15.4 (r286944, webkit.org/b/202142) service worker responses stream to
+  // disk through the download manager, so the fallback is only needed on old
+  // WebKit and on 18.2-18.3, which interrupted service worker downloads
+  // prematurely (webkit.org/b/286060, fixed in 18.4). See #373.
+  const isWebKit = /constructor/i.test(global.HTMLElement) || !!global.safari || !!global.WebKitPoint
+  let useBlobFallback = isWebKit && !webKitStreamsServiceWorkerDownloads(global.navigator && global.navigator.userAgent)
   const downloadStrategy = isSecureContext || 'MozAppearance' in document.documentElement.style
     ? 'iframe'
     : 'navigate'
@@ -31,6 +38,31 @@
     supported: true,
     version: { full: '2.0.5', major: 2, minor: 0, dot: 5 },
     mitm: 'https://jimmywarting.github.io/StreamSaver.js/mitm.html?version=2.0.0'
+  }
+
+  /**
+   * Whether this WebKit build hands service worker generated responses with a
+   * Content-Disposition: attachment header to the download manager (Safari 15.4+)
+   * instead of re-fetching the URL and dropping the body (#69).
+   *
+   * There is no feature test for this: the page cannot observe what the download
+   * manager did with the stream. The WebKit version is taken from the user agent,
+   * which every browser on iOS / iPadOS reports as "OS <major>_<minor>" (they are
+   * all WebKit) and Safari on macOS reports as "Version/<major>.<minor>".
+   *
+   * @param  {string} ua navigator.userAgent
+   * @return {boolean}
+   */
+  function webKitStreamsServiceWorkerDownloads (ua) {
+    const match = /OS (\d+)_(\d+)/.exec(ua || '') || /Version\/(\d+)\.(\d+)/.exec(ua || '')
+    if (!match) return false
+    const major = +match[1]
+    const minor = +match[2]
+    // 16.0 rather than 15.4 to stay clear of the first release that shipped the fix
+    if (major < 16) return false
+    // iOS 18.2 and 18.3 interrupted service worker downloads (webkit.org/b/286060)
+    if (major === 18 && (minor === 2 || minor === 3)) return false
+    return true
   }
 
   /**
@@ -264,11 +296,8 @@
           throw new TypeError('Can only write Uint8Arrays')
         }
         if (useBlobFallback) {
-          // Safari... The new IE6
-          // https://github.com/jimmywarting/StreamSaver.js/issues/69
-          //
-          // even though it has everything it fails to download anything
-          // that comes from the service worker..!
+          // WebKit before 15.4 (and 18.2-18.3) can not download anything that
+          // comes from the service worker (#69), so buffer everything in memory.
           chunks.push(chunk)
           return
         }
